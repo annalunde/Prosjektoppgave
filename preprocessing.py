@@ -7,7 +7,7 @@ class Preprocessor:
     def __init__(self, data_path_RAT):
         self.data_path_RAT = data_path_RAT
 
-    def import_data_RAT(self):
+    def process_data_RAT(self):
         files = [
             os.path.join(self.data_path_RAT, filename)
             for filename in os.listdir(self.data_path_RAT)
@@ -17,9 +17,13 @@ class Preprocessor:
         for f in files:
             data.append(pd.read_csv(f, index_col=None, header=0))
         df = pd.concat(data, axis=0, ignore_index=True)
+
+        # convert yes no to 1 and 0
+        df["Wheelchair"] = df["Wheelchair Accessible"].map({"Yes": 1, "No": 0})
+
         chosen_columns = [
             "Request Creation Time",
-            "Wheelchair Accessible",
+            "Wheelchair",
             "Request ID",
             "Rider ID",
             "Number of Passengers",
@@ -33,7 +37,7 @@ class Preprocessor:
         ]
         data = df[chosen_columns]
         print(data.head())
-        df.to_csv("data_RAT.csv")
+        data.to_csv("data_RAT.csv")
 
 
 def main():
@@ -42,7 +46,7 @@ def main():
     try:
         preprocessor = Preprocessor(data_path_RAT=config("data_path_RAT"))
         print("Preprocessing data: ")
-        preprocessor.import_data_RAT()
+        preprocessor.process_data_RAT()
 
     except Exception as e:
         print("ERROR:", e)

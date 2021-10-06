@@ -6,6 +6,7 @@ __pycache__/
 
 # Data
 Data/
+data_RAT.csv
 
 # C extensions
 *.so

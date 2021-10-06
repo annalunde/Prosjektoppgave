@@ -1,34 +1,52 @@
 import pandas as pd
 import os
+from decouple import config
+
 
 class Preprocessor:
-    def __init__(self, data_path):
-        self.data_path = data_path
-        
+    def __init__(self, data_path_RAT):
+        self.data_path_RAT = data_path_RAT
 
     def import_data_RAT(self):
-        files = [os.path.join(self.data_path, filename) for filename in os.listdir(self.data_path) if filename.startswith("Ride Requests-")]
+        files = [
+            os.path.join(self.data_path_RAT, filename)
+            for filename in os.listdir(self.data_path_RAT)
+            if filename.startswith("Ride Requests-")
+        ]
         data = []
         for f in files:
-                data.append(pd.read_csv(f, index_col=None, header=0))
+            data.append(pd.read_csv(f, index_col=None, header=0))
         df = pd.concat(data, axis=0, ignore_index=True)
-        chosen_columns = ["Request Creation Time",  "Wheelchair Accessible", "Request ID", "Rider ID", "Number of Passengers", "Requested Pickup Time", "Requested Dropoff Time", "Origin Lat", "Origin Lng", "Destination Lat", "Destination Lng", "Reason For Travel"]
+        chosen_columns = [
+            "Request Creation Time",
+            "Wheelchair Accessible",
+            "Request ID",
+            "Rider ID",
+            "Number of Passengers",
+            "Requested Pickup Time",
+            "Requested Dropoff Time",
+            "Origin Lat",
+            "Origin Lng",
+            "Destination Lat",
+            "Destination Lng",
+            "Reason For Travel",
+        ]
         data = df[chosen_columns]
         print(data.head())
+        df.to_csv("data_RAT.csv")
+
 
 def main():
     preprocessor = None
 
     try:
-        preprocessor = Preprocessor(data_path="/Users/Anna/Desktop/Prosjektoppgave/Kodebase/Prosjektoppgave/Data")
+        preprocessor = Preprocessor(data_path_RAT=config("data_path_RAT"))
         print("Preprocessing data: ")
         preprocessor.import_data_RAT()
-        
-
 
     except Exception as e:
         print("ERROR:", e)
-    
+
 
 if __name__ == "__main__":
     main()

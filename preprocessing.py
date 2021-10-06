@@ -7,7 +7,7 @@ class Preprocessor:
         
 
     def import_data_RAT(self):
-        files = [filename for filename in os.listdir('/Users/Anna/Desktop/Prosjektoppgave/Kodebase/Prosjektoppgave/Data') if filename.startswith("Ride Requests-")]
+        files = [filename for filename in os.listdir(self.data_path) if filename.startswith("Ride Requests-")]
         for f in files:
                 print(f)
                 df = pd.read_csv(self.data_path)
@@ -19,7 +19,7 @@ def main():
     preprocessor = None
 
     try:
-        preprocessor = Preprocessor(data_path="/Users/Anna/Desktop/Prosjektoppgave/Kodebase/Prosjektoppgave/Data/Ride Requests-juli og august 2021.csv")
+        preprocessor = Preprocessor(data_path="/Users/Anna/Desktop/Prosjektoppgave/Kodebase/Prosjektoppgave/Data")
         print("Preprocessing data: ")
         preprocessor.import_data_RAT()
         

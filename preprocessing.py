@@ -7,13 +7,14 @@ class Preprocessor:
         
 
     def import_data_RAT(self):
-        files = [filename for filename in os.listdir(self.data_path) if filename.startswith("Ride Requests-")]
+        files = [os.path.join(self.data_path, filename) for filename in os.listdir(self.data_path) if filename.startswith("Ride Requests-")]
+        data = []
         for f in files:
-                print(f)
-                df = pd.read_csv(self.data_path)
+                data.append(pd.read_csv(f, index_col=None, header=0))
+        df = pd.concat(data, axis=0, ignore_index=True)
         chosen_columns = ["Request Creation Time",  "Wheelchair Accessible", "Request ID", "Rider ID", "Number of Passengers", "Requested Pickup Time", "Requested Dropoff Time", "Origin Lat", "Origin Lng", "Destination Lat", "Destination Lng", "Reason For Travel"]
         data = df[chosen_columns]
-        #print(data.head())
+        print(data.head())
 
 def main():
     preprocessor = None

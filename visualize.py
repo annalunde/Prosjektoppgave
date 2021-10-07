@@ -96,7 +96,7 @@ def main():
     visualizer = None
 
     try:
-        visualizer = Visualizer(data_path=config("data_path"))
+        visualizer = Visualizer(data_path=config("data_path_RAT"))
         print("Visualizing data: ")
         visualizer.visualize_on_map()
 

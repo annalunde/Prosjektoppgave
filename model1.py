@@ -31,7 +31,6 @@ try:
     # mangler o(k) og d(k) i summene
     m.addConstrs((quicksum(x[o_k[k],j,k] for j in pickups) == quicksum(x[i,d_k[k],k] for i in dropoffs) == 1 for k in vehicles), name="Flow1")
 
-    # må sette n til noe
     m.addConstrs((quicksum(x[i,j,k] for j in nodes) - quicksum(x[n+i,j,k] for j in nodes) == 0 for i in pickups for k in vehicles), name="Flow2")
 
     m.addConstrs((quicksum(x[j,i,k] for j in nodes) - quicksum(x[i,j,k] for j in nodes) == 0 for i in nodes for k in vehicles), name="Flow3")
@@ -41,15 +40,12 @@ try:
     # STANDARD SEATS CAPACITY CONSTRAINTS
     m.addConstrs((q_S[o_k[k],k] == 0 for k in vehicles), name="SCapacity1")
 
-    # Usikker på hva man gjør med arcs (i,j) in A
     m.addConstrs((q_S[i,k] + L_S[j] - q_S[j,k] <= Q_S[k]*(1 - x[i,j,k]) for j in pickups for i in nodes for k in vehicles), name="SCapacity2")
 
-    # Usikker på hva man gjør med arcs (i,j) in A + n må settes til noe
     m.addConstrs((q_S[i, k] - L_S[j] - q_S[n+j, k] <= Q_S[k] * (1 - x[i, j, k]) for j in pickups for i in nodes for k in vehicles), name="SCapacity3")
 
     m.addConstrs((quicksum(L_S[i]*x[i,j,k] for j in nodes) <= q_S[i,k] <= quicksum(Q_S[k]*x[i,j,k] for j in nodes) for i in pickups for k in vehicles), name="SCapacity4")
 
-    # n må settes til noe
     m.addConstrs((quicksum((Q_S[k] - L_S[i])*x[n+i,j,k] for j in nodes) >= q_S[n+i,k] >= 0 for i in pickups for k in vehicles), name="SCapacity5")
 
 
@@ -57,15 +53,12 @@ try:
     # WHEELCHAIR SEATS CAPACITY CONSTRAINTS
     m.addConstrs((q_W[o_k[k], k] == 0 for k in vehicles), name="WCapacity1")
 
-    # Usikker på hva man gjør med arcs (i,j) in A
     m.addConstrs((q_W[i, k] + L_W[j] - q_W[j, k] <= Q_W[k] * (1 - x[i, j, k]) for j in pickups for i in nodes for k in vehicles), name="WCapacity2")
 
-    # Usikker på hva man gjør med arcs (i,j) in A + n må settes til noe
     m.addConstrs((q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, j, k]) for j in pickups for i in nodes for k in vehicles), name="WCapacity3")
 
     m.addConstrs((quicksum(L_W[i] * x[i, j, k] for j in nodes) <= q_W[i, k] <= quicksum(Q_W[k] * x[i, j, k] for j in nodes) for i in pickups for k in vehicles), name="WCapacity4")
 
-    # n må settes til noe
     m.addConstrs((quicksum((Q_W[k] - L_W[i]) * x[n + i, j, k] for j in nodes) >= q_W[n + i, k] >= 0 for i in pickups for k in vehicles), name="WCapacity5")
 
 
@@ -75,19 +68,15 @@ try:
 
     m.addConstrs((T_H_L[i] <= t[i,k] <= T_H_U[i] for i in nodes for k in vehicles), name="TimeWindow2")
 
-    # Mij må settes
-    m.addConstrs((t[i,k] + T_ij[i,j] - t[j,k] <= M[i,j]*(1 - x[i,j,k]) for i in nodes for j in nodes for k in vehicles), name="TimeWindow3")
+    m.addConstrs((t[i,k] + T_ij[i,j] - t[j,k] <= M_ij[i,j]*(1 - x[i,j,k]) for i in nodes for j in nodes for k in vehicles), name="TimeWindow3")
 
-    # n må settes
     m.addConstrs((t[i,k] + T_ij[i,n+i] - t[n+i,k] <= 0 for i in pickups for k in vehicles), name="TimeWindow4")
 
 
 
     # RIDE TIME CONSTRAINTS
-    # M og n må settes
     m.addConstrs((t[n+i,k] - t[i,k] - (1 + F)*T_ij[i,n+i] <= M*w[i] for i in pickups for k in vehicles), name="RideTime1")
 
-    # M og n må settes
     m.addConstrs((d[i] >= t[n+i,k] - t[i,k] -M*(1 - w[i]) for i in pickups for k in vehicles), name="RideTime2")
 
 

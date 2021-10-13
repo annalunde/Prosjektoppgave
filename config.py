@@ -4,9 +4,11 @@ from datetime import datetime,timedelta
 
 # Sets
 num_pickup_nodes = 1
-num_dropoff_nodes = 1
-num_nodes = 2
+n = num_pickup_nodes
 num_vehicles = 1
+num_nodes = 2*n
+num_nodes_depots = 2*num_vehicles + 2*n
+
 
 # Parameters
 C_D = [1]
@@ -27,14 +29,12 @@ F = 1.15
 M_ij = np.empty(shape=(num_nodes, num_nodes),dtype=datetime)
 for i in range(num_nodes):
     for j in range(num_nodes):
-        print(T_H_L[i] + T_ij[i][j] - T_H_U[j])
         M_ij[i][j] = T_H_L[i] + T_ij[i][j] - T_H_U[j]
-M = timedelta(hours=24)     # in hours
+M = timedelta(hours=24).total_seconds()     # in hours
 
 
-# Origin and destination
-o_k = [0]
-d_k = [3]
-n = num_pickup_nodes
+
+
+
 
 

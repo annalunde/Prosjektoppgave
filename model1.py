@@ -7,10 +7,10 @@ from config import *
 try:
     m = gp.Model("mip1")
 
-    pickups = range(num_pickup_nodes)
-    dropoffs = range(num_dropoff_nodes)
-    nodes = range(num_nodes)
-    vehicles = range(num_vehicles)
+    pickups = [i for i in range(num_pickup_nodes)]
+    dropoffs = [i for i in range(n,num_nodes)]
+    nodes = [i for i in range(num_nodes)]
+    vehicles = [i for i in range(num_vehicles)]
 
     # Create variables
     x = m.addVars(nodes, nodes, vehicles, vtype=GRB.BINARY, name="x")
@@ -22,8 +22,14 @@ try:
     u = m.addVars(nodes, name="u")
     d = m.addVars(pickups, name="d")
 
+    for i in dropoffs:
+        print(i)
+
     # OBJECTIVE FUNCTION
-    m.setObjective(quicksum(C_ijk*x[i,j,k] for i in nodes for j in nodes for k in vehicles) + quicksum(C_R*(1 - quicksum(x[i,j,k] for j in nodes for k in vehicles)) for i in pickups) + quicksum(C_T*(l[i] + u[i]) for i in nodes) + quicksum(C_F*d[i] for i in pickups), GRB.MINIMIZE)
+    m.setObjective(quicksum(C_D[k]*D_ij[i][j]*x[i,j,k] for i in nodes for j in nodes for k in vehicles)
+                   + quicksum(C_R*(1 - quicksum(x[i,j,k] for j in nodes for k in vehicles)) for i in pickups)
+                   + quicksum(C_T*(l[i] + u[i]) for i in nodes)
+                   + quicksum(C_F*d[i] for i in pickups), GRB.MINIMIZE)
 
 
 
@@ -82,7 +88,7 @@ try:
 
 
     # RUN MODEL
-    #m.optimize()
+    m.optimize()
 
 except GurobiError as e:
     print('Error reported')

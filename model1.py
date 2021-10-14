@@ -313,7 +313,8 @@ try:
     m.optimize()
 
     for v in m.getVars():
-        print('%s %g' % (v.varName, v.x))
+        if v.x > 0:
+            print('%s %g' % (v.varName, v.x))
 
     for i in nodes:
         for k in vehicles:

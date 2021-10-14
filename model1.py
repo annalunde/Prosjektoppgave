@@ -31,10 +31,7 @@ try:
             for j in nodes
             for k in vehicles
         )
-        + quicksum(
-            C_R * (1 - quicksum(x[i, j, k] for j in nodes for k in vehicles))
-            for i in pickups
-        )
+
         + quicksum(C_T * (l[i] + u[i]) for i in nodes)
         + quicksum(C_F * d[i] for i in pickups),
         GRB.MINIMIZE,
@@ -126,17 +123,30 @@ try:
         name="Flow7",
     )
 
+    print("Flow8")
+    m.addConstrs(
+        (
+            quicksum(
+                x[i, j, k] for j in nodes for k in vehicles
+            )
+            == 1
+            for i in pickups
+        ),
+        name="Flow8",
+    )
+
     # STANDARD SEATS CAPACITY CONSTRAINTS
     print("SCapacity1")
     m.addConstrs(
         (q_S[nodes_depots[2 * n + k], k] == 0 for k in vehicles), name="SCapacity1"
     )
+
     print("SCapacity2")
     m.addConstrs(
         (
             q_S[i, k] + L_S[j] - q_S[j, k] <= Q_S[k] * (1 - x[i, j, k])
             for j in pickups
-            for i in nodes
+            for i in nodes_depots
             for k in vehicles
         ),
         name="SCapacity2",
@@ -146,7 +156,7 @@ try:
         (
             q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S[k] * (1 - x[i, j, k])
             for j in pickups
-            for i in nodes
+            for i in nodes_depots
             for k in vehicles
         ),
         name="SCapacity3",
@@ -154,7 +164,7 @@ try:
     print("SCapacity4")
     m.addConstrs(
         (
-            quicksum(L_S[i] * x[i, j, k] for j in nodes) <= q_S[i, k]
+            quicksum(L_S[i] * x[i, j, k] for j in nodes_depots) <= q_S[i, k]
             for i in pickups
             for k in vehicles
         ),
@@ -163,7 +173,7 @@ try:
     print("SCapacity5")
     m.addConstrs(
         (
-            q_S[i, k] <= quicksum(Q_S[k] * x[i, j, k] for j in nodes)
+            q_S[i, k] <= quicksum(Q_S[k] * x[i, j, k] for j in nodes_depots)
             for i in pickups
             for k in vehicles
         ),
@@ -172,7 +182,7 @@ try:
     print("SCapacity6")
     m.addConstrs(
         (
-            quicksum((Q_S[k] - L_S[i]) * x[n + i, j, k] for j in nodes) >= q_S[n + i, k]
+            quicksum((Q_S[k] - L_S[i]) * x[n + i, j, k] for j in nodes_depots) >= q_S[n + i, k]
             for i in pickups
             for k in vehicles
         ),
@@ -189,7 +199,7 @@ try:
         (
             q_W[i, k] + L_W[j] - q_W[j, k] <= Q_W[k] * (1 - x[i, j, k])
             for j in pickups
-            for i in nodes
+            for i in nodes_depots
             for k in vehicles
         ),
         name="WCapacity2",
@@ -199,7 +209,7 @@ try:
         (
             q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, j, k])
             for j in pickups
-            for i in nodes
+            for i in nodes_depots
             for k in vehicles
         ),
         name="WCapacity3",
@@ -207,7 +217,7 @@ try:
     print("WCapacity4")
     m.addConstrs(
         (
-            quicksum(L_W[i] * x[i, j, k] for j in nodes) <= q_W[i, k]
+            quicksum(L_W[i] * x[i, j, k] for j in nodes_depots) <= q_W[i, k]
             for i in pickups
             for k in vehicles
         ),
@@ -216,7 +226,7 @@ try:
     print("WCapacity5")
     m.addConstrs(
         (
-            q_W[i, k] <= quicksum(Q_W[k] * x[i, j, k] for j in nodes)
+            q_W[i, k] <= quicksum(Q_W[k] * x[i, j, k] for j in nodes_depots)
             for i in pickups
             for k in vehicles
         ),
@@ -225,7 +235,7 @@ try:
     print("WCapacity6")
     m.addConstrs(
         (
-            quicksum((Q_W[k] - L_W[i]) * x[n + i, j, k] for j in nodes) >= q_W[n + i, k]
+            quicksum((Q_W[k] - L_W[i]) * x[n + i, j, k] for j in nodes_depots) >= q_W[n + i, k]
             for i in pickups
             for k in vehicles
         ),

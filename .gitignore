@@ -7,6 +7,7 @@ __pycache__/
 Data/
 data_RAT.csv
 data_TT.csv
+map_requests.html
 
 # C extensions
 *.so

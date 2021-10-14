@@ -53,6 +53,7 @@ try:
         ),
         name="Flow1",
     )
+
     print("Flow2")
     m.addConstrs(
         (
@@ -65,26 +66,64 @@ try:
         ),
         name="Flow2",
     )
+
     print("Flow3")
     m.addConstrs(
         (
-            quicksum(x[i, j, k] for j in nodes)
-            - quicksum(x[n + i, j, k] for j in nodes)
+            quicksum(
+                x[j, nodes_depots[2 * n + k], k]
+                for j in nodes_depots
+            )
             == 0
-            for i in pickups
             for k in vehicles
         ),
         name="Flow3",
     )
+
     print("Flow4")
     m.addConstrs(
         (
-            quicksum(x[j, i, k] for j in nodes) - quicksum(x[i, j, k] for j in nodes)
+            quicksum(
+                x[nodes_depots[2 * n + k + num_vehicles], i,  k]
+                for i in nodes_depots
+            )
+            == 0
+            for k in vehicles
+        ),
+        name="Flow4",
+    )
+
+    print("Flow5")
+    m.addConstrs(
+        (
+            quicksum(x[i, j, k] for j in nodes_depots)
+            - quicksum(x[n + i, j, k] for j in nodes_depots)
+            == 0
+            for i in pickups
+            for k in vehicles
+        ),
+        name="Flow5",
+    )
+    print("Flow6")
+    m.addConstrs(
+        (
+            quicksum(x[j, i, k] for j in nodes_depots) - quicksum(x[i, j, k] for j in nodes_depots)
             == 0
             for i in nodes
             for k in vehicles
         ),
-        name="Flow4",
+        name="Flow6",
+    )
+
+    print("Flow7")
+    m.addConstrs(
+        (
+            x[i, i, k]
+            == 0
+            for i in nodes_depots
+            for k in vehicles
+        ),
+        name="Flow7",
     )
 
     # STANDARD SEATS CAPACITY CONSTRAINTS
@@ -262,6 +301,15 @@ try:
 
     # RUN MODEL
     m.optimize()
+
+    for v in m.getVars():
+        print('%s %g' % (v.varName, v.x))
+
+    for i in nodes:
+        for k in vehicles:
+            print(t[i, k].varName, datetime.fromtimestamp(t[i,k].x).strftime('%Y-%m-%d %H:%M:%S'))
+
+    print('Obj: %g' % m.objVal)
 
 except GurobiError as e:
     print("Error reported")

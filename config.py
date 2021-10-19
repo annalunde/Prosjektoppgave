@@ -36,7 +36,6 @@ Position = [
 
 
 D_ij = distance.cdist(Position, Position, "euclidean")
-print(D_ij)
 
 speed = 40
 
@@ -46,7 +45,6 @@ for i in range(num_nodes_and_depots):
     for j in range(num_nodes_and_depots):
         T_ij[i][j] = timedelta(hours=(D_ij[i][j] / speed))
 
-print(T_ij)
 
 # C_R = 10
 C_F = 1
@@ -105,5 +103,4 @@ M_ij = np.empty(shape=(num_nodes, num_nodes), dtype=datetime)
 for i in range(num_nodes):
     for j in range(num_nodes):
         M_ij[i][j] = T_H_U[i] + T_ij[i][j] - T_H_L[j]
-print(M_ij)
 M = timedelta(hours=24).total_seconds()  # in hours

@@ -16,26 +16,32 @@ class Model:
         colors = ["green", "red", "blue"]
 
         nodes = [i for i in range(2 * n)]
+
         for node in nodes:
-            state = "Pickup" if node < n else "Dropoff"
-            printable_label = f"State: {state}"
+            state = "Pickup" if node < n else "Dropoff"  # legg til depots state
+            printable_label = (
+                f"State: {state}"
+                f"\nPos: {Position[node][0],Position[node][1]}"
+                f"\nToS: {Position[node][0],Position[node][1]}"
+            )
             dot.node(
                 name=str(node),
                 label=printable_label,
                 pos=f"{Position[node][0]},{Position[node][1]}!",
             )
+
         for v in results:
             if v.varName.startswith("x") and v.x > 0:
                 print("%s %g" % (v.varName, v.x))
-                edgelabel = str(v.varName[6])
+                # edgelabel = str(v.varName[6])
                 dot.edge(
                     str(v.varName[2]),
                     str(v.varName[4]),
-                    label=edgelabel,
+                    # label=edgelabel,
                     color=colors[int(v.varName[6])],
                 )
 
-        dot.render(filename="test.gv", cleanup=True, view=True)
+        dot.render(filename="route.gv", cleanup=True, view=True)
 
     def run_model(self):
         try:
@@ -75,10 +81,7 @@ class Model:
             # FLOW CONSTRAINTS
             m.addConstrs(
                 (
-                    quicksum(
-                        x[nodes_depots[2 * n + k], j, k]
-                        for j in (pickups + [nodes_depots[2 * n + k + num_vehicles]])
-                    )
+                    quicksum(x[nodes_depots[2 * n + k], j, k] for j in nodes_depots)
                     == 1
                     for k in vehicles
                 ),
@@ -89,7 +92,7 @@ class Model:
                 (
                     quicksum(
                         x[i, nodes_depots[2 * n + k + num_vehicles], k]
-                        for i in (dropoffs + [nodes_depots[2 * n + k]])
+                        for i in nodes_depots
                     )
                     == 1
                     for k in vehicles
@@ -146,7 +149,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    quicksum(x[i, j, k] for j in nodes for k in vehicles) == 1
+                    quicksum(x[i, j, k] for j in nodes_depots for k in vehicles) == 1
                     for i in pickups
                 ),
                 name="Flow8",

@@ -11,7 +11,7 @@ num_nodes = 2 * n
 num_nodes_and_depots = 2 * num_vehicles + 2 * n
 
 # Parameters
-C_D = [1, 1]
+C_D = [1,1]
 '''
 D_ij = [
         [0, 1, 4, 1, 3, 3],
@@ -52,8 +52,8 @@ print(T_ij)
 #C_R = 10
 C_F = 1
 C_T = 1
-Q_S = [10, 10]
-Q_W = [1, 1]
+Q_S = [10,10]
+Q_W = [1,1]
 L_S = [1, 2, 5] #Load for each request
 L_W = [0, 1, 0] #Wheelchair load for request
 

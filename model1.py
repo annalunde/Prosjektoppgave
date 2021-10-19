@@ -208,10 +208,11 @@ try:
         ),
         name="SCapacity2",
     )
+
     print("SCapacity3")
     m.addConstrs(
         (
-            q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S[k] * (1 - x[i, j, k])
+            q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S[k] * (1 - x[i, n+j, k])
             for j in pickups
             for i in nodes_depots
             for k in vehicles
@@ -246,6 +247,16 @@ try:
         name="SCapacity6",
     )
 
+    print("SCapacity7")
+    m.addConstrs(
+        (
+            q_S[i, k] <= Q_S[k] * (1 - x[i, 2 * n + k + num_vehicles, k])
+            for i in nodes_depots
+            for k in vehicles
+        ),
+        name="SCapacity7",
+    )
+
     # WHEELCHAIR SEATS CAPACITY CONSTRAINTS
     print("WCapacity1")
     m.addConstrs(
@@ -264,7 +275,7 @@ try:
     print("WCapacity3")
     m.addConstrs(
         (
-            q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, j, k])
+            q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, n+j, k])
             for j in pickups
             for i in nodes_depots
             for k in vehicles
@@ -297,6 +308,16 @@ try:
             for k in vehicles
         ),
         name="WCapacity6",
+    )
+
+    print("WCapacity7")
+    m.addConstrs(
+        (
+            q_W[i, k] <= Q_W[k] * (1 - x[i, 2 * n + k + num_vehicles, k])
+            for i in nodes_depots
+            for k in vehicles
+        ),
+        name="WCapacity7",
     )
 
     # TIME WINDOW CONSTRAINTS

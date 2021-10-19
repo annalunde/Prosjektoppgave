@@ -43,7 +43,8 @@ try:
         (
             quicksum(
                 x[nodes_depots[2 * n + k], j, k]
-                for j in (pickups + [nodes_depots[2 * n + k + num_vehicles]])
+                #for j in (pickups + [nodes_depots[2 * n + k + num_vehicles]])
+                for j in nodes_depots
             )
             == 1
             for k in vehicles
@@ -56,7 +57,8 @@ try:
         (
             quicksum(
                 x[i, nodes_depots[2 * n + k + num_vehicles], k]
-                for i in (dropoffs + [nodes_depots[2 * n + k]])
+                #for i in (dropoffs + [nodes_depots[2 * n + k]])
+                for i in nodes_depots
             )
             == 1
             for k in vehicles
@@ -127,7 +129,7 @@ try:
     m.addConstrs(
         (
             quicksum(
-                x[i, j, k] for j in nodes for k in vehicles
+                x[i, j, k] for j in nodes_depots for k in vehicles
             )
             == 1
             for i in pickups
@@ -313,7 +315,7 @@ try:
     m.optimize()
 
     for v in m.getVars():
-        if v.x > 0:
+        if v.x>0:
             print('%s %g' % (v.varName, v.x))
 
     for i in nodes:

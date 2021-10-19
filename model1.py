@@ -137,6 +137,61 @@ try:
         name="Flow8",
     )
 
+    # ADDED
+    print("Flow9")
+    # vehicles cannot drive into an origin
+    m.addConstrs(
+        (
+            quicksum(
+                x[i, nodes_depots[2 * n + v], k] for i in nodes_depots for k in vehicles
+            )
+            == 0
+            for v in vehicles
+        ),
+        name="Flow9",
+    )
+
+    print("Flow10")
+    # vehicles cannot drive from a destination
+    m.addConstrs(
+        (
+            quicksum(
+                x[nodes_depots[2 * n + v + num_vehicles], j, k] for j in nodes_depots for k in vehicles
+            )
+            == 0
+            for v in vehicles
+        ),
+        name="Flow10",
+    )
+
+    # vehicles cannot drive from origins that are not their own
+    print("Flow11")
+    m.addConstrs(
+        (
+            quicksum(
+                x[nodes_depots[2 * n + v], j, k]
+                for j in nodes_depots for k in vehicles if k != v
+            )
+            == 0
+            for v in vehicles
+        ),
+        name="Flow11",
+    )
+
+    # vehicles cannot drive into destinations that are not their own
+    print("Flow12")
+    m.addConstrs(
+        (
+            quicksum(
+                x[i, nodes_depots[2 * n + v + num_vehicles], k]
+                for i in nodes_depots for k in vehicles if k != v
+            )
+            == 0
+            for v in vehicles
+        ),
+        name="Flow12",
+    )
+
     # STANDARD SEATS CAPACITY CONSTRAINTS
     print("SCapacity1")
     m.addConstrs(

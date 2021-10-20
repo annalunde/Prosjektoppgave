@@ -15,14 +15,14 @@ class Model:
 
         colors = ["green", "red", "blue"]
 
-        nodes = [i for i in range(2 * n)]
+        nodes = [i for i in range(num_nodes_and_depots)]
 
         for node in nodes:
-            state = "Pickup" if node < n else "Dropoff"  # legg til depots state
+            # nodes
+            state = "Pickup" if node < n else "Dropoff"
+            state = "Depot" if node >= 2 * n else "Dropoff"
             printable_label = (
-                f"State: {state}"
-                f"\nPos: {Position[node][0],Position[node][1]}"
-                f"\nToS: {Position[node][0],Position[node][1]}"
+                f"State: {state}" f"\nPos: {Position[node][0],Position[node][1]}"
             )
             dot.node(
                 name=str(node),
@@ -31,15 +31,26 @@ class Model:
             )
 
         for v in results:
+            # edges
+            print("edge", f"t[{v.varName[2]},{v.varName[6]}]")
             if v.varName.startswith("x") and v.x > 0:
-                print("%s %g" % (v.varName, v.x))
-                # edgelabel = str(v.varName[6])
-                dot.edge(
-                    str(v.varName[2]),
-                    str(v.varName[4]),
-                    # label=edgelabel,
-                    color=colors[int(v.varName[6])],
-                )
+                try:
+                    edgelabel = datetime.fromtimestamp(
+                        next(
+                            a.x
+                            for a in results
+                            if a.varName == f"t[{v.varName[2]},{v.varName[6]}]"
+                        )
+                    ).strftime("%Y-%m-%d %H:%M:%S")
+                    print("label", edgelabel)
+                    dot.edge(
+                        str(v.varName[2]),
+                        str(v.varName[4]),
+                        label=edgelabel,
+                        color=colors[int(v.varName[6])],
+                    )
+                except StopIteration as e:
+                    continue
 
         dot.render(filename="route.gv", cleanup=True, view=True)
 
@@ -209,7 +220,7 @@ class Model:
             )
             m.addConstrs(
                 (
-                    q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S[k] * (1 - x[i, n+j, k])
+                    q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S[k] * (1 - x[i, n + j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -267,7 +278,7 @@ class Model:
             )
             m.addConstrs(
                 (
-                    q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, n+j, k])
+                    q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, n + j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles

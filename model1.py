@@ -13,16 +13,35 @@ class Model:
     def vizualize_route(self, results):
         dot = graphviz.Digraph(engine="neato")
 
-        colors = ["green", "red", "blue"]
+        colors = [
+            "aquamarine",
+            "bisque",
+            "black",
+            "blue",
+            "blueviolet",
+            "brown",
+            "chartreuse",
+            "cornflowerblue",
+            "purple",
+            "darkmagenta",
+            "dodgerblue",
+            "greenyellow",
+            "fuchsia",
+            "mediumseagreen",
+            "navy",
+        ]
 
         nodes = [i for i in range(num_nodes_and_depots)]
 
         for node in nodes:
             # nodes
             state = "Pickup" if node < n else "Dropoff"
-            state = "Depot" if node >= 2 * n else "Dropoff"
+            state = "Depot" if node >= 2 * n else state
+            number = node if node < n else node - n
             printable_label = (
-                f"State: {state}" f"\nPos: {Position[node][0],Position[node][1]}"
+                f"State: {state}"
+                f"\nPos: {Position[node][0],Position[node][1]}"
+                f"\nRequest No: {number}"
             )
             dot.node(
                 name=str(node),
@@ -32,24 +51,32 @@ class Model:
 
         for v in results:
             # edges
-            print("edge", f"t[{v.varName[2]},{v.varName[6]}]")
             if v.varName.startswith("x") and v.x > 0:
+                var = (
+                    str(v.varName)
+                    .replace("x", "")
+                    .replace("[", "")
+                    .replace("]", "")
+                    .split(",")
+                )
                 try:
                     edgelabel = datetime.fromtimestamp(
                         next(
-                            a.x
-                            for a in results
-                            if a.varName == f"t[{v.varName[2]},{v.varName[6]}]"
+                            a.x for a in results if a.varName == f"t[{var[0]},{var[2]}]"
                         )
                     ).strftime("%Y-%m-%d %H:%M:%S")
-                    print("label", edgelabel)
                     dot.edge(
-                        str(v.varName[2]),
-                        str(v.varName[4]),
+                        str(var[0]),
+                        str(var[1]),
                         label=edgelabel,
-                        color=colors[int(v.varName[6])],
+                        color=colors[int(var[2])],
                     )
                 except StopIteration as e:
+                    dot.edge(
+                        str(var[0]),
+                        str(var[1]),
+                        color=colors[int(var[2])],
+                    )
                     continue
 
         dot.render(filename="route.gv", cleanup=True, view=True)

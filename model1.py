@@ -38,7 +38,7 @@ class Model:
                     str(v.varName[2]),
                     str(v.varName[4]),
                     # label=edgelabel,
-                    color=colors[int(v.varName[6])],
+                    color=colors[int(v.varName[6])]
                 )
 
         dot.render(filename="route.gv", cleanup=True, view=True)
@@ -268,7 +268,7 @@ class Model:
             )
             m.addConstrs(
                 (
-                    q_W[i, k] + L_W[j] - q_W[j, k] <= Q_W[k] * (1 - x[i, j, k])
+                    q_W[i, k] + L_W[j] - q_W[j, k] <= quicksum(Q_W[k] for k in vehicles) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles

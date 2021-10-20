@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from scipy.spatial import distance
 
 # Sets
-n = 3  # number of pickup nodes
+n = 4  # number of pickup nodes
 num_vehicles = 2
 num_nodes = 2 * n
 num_nodes_and_depots = 2 * num_vehicles + 2 * n
@@ -25,13 +25,15 @@ Position = [
     (2, 3),
     (2, 6),
     (12, 4),
+    (17, 18),
     (6, 10),
     (9.5, 7.5),
     (6.5, 1),
+    (1, 2),
     (0, 0),
     (0, 0),
     (1, 1),
-    (1, 1),
+    (1, 1)
 ]
 
 
@@ -51,8 +53,8 @@ C_F = 1
 C_T = 1
 Q_S = [16, 4]
 Q_W = [1, 1]
-L_S = [1, 2, 5]  # Load for each request
-L_W = [0, 1, 0]  # Wheelchair load for request
+L_S = [1, 2, 5, 0]  # Load for each request
+L_W = [0, 1, 0, 1]  # Wheelchair load for request
 
 """
 T_ij = [
@@ -68,34 +70,42 @@ T_S_L = [
     datetime.strptime("2021-10-13 09:00:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 09:00:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 09:00:00", "%Y-%m-%d %H:%M:%S"),
+    datetime.strptime("2021-10-13 09:00:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 09:55:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 10:20:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 10:30:00", "%Y-%m-%d %H:%M:%S"),
+    datetime.strptime("2021-10-13 09:55:00", "%Y-%m-%d %H:%M:%S"),
 ]
 T_S_U = [
     datetime.strptime("2021-10-13 10:15:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 10:30:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 10:50:00", "%Y-%m-%d %H:%M:%S"),
+    datetime.strptime("2021-10-13 10:15:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 10:05:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 10:25:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 10:40:00", "%Y-%m-%d %H:%M:%S"),
+    datetime.strptime("2021-10-13 10:05:00", "%Y-%m-%d %H:%M:%S"),
 ]
 
 T_H_L = [
     datetime.strptime("2021-10-13 09:00:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 09:00:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 09:00:00", "%Y-%m-%d %H:%M:%S"),
+    datetime.strptime("2021-10-13 09:00:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 09:45:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 10:15:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 10:20:00", "%Y-%m-%d %H:%M:%S"),
+    datetime.strptime("2021-10-13 09:45:00", "%Y-%m-%d %H:%M:%S"),
 ]
 T_H_U = [
     datetime.strptime("2021-10-13 10:15:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 10:30:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 10:50:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 10:15:00", "%Y-%m-%d %H:%M:%S"),
+    datetime.strptime("2021-10-13 10:15:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 10:30:00", "%Y-%m-%d %H:%M:%S"),
     datetime.strptime("2021-10-13 10:50:00", "%Y-%m-%d %H:%M:%S"),
+    datetime.strptime("2021-10-13 10:15:00", "%Y-%m-%d %H:%M:%S"),
 ]
 
 F = 2

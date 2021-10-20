@@ -200,7 +200,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    q_S[i, k] + L_S[j] - q_S[j, k] <= Q_S[k] * (1 - x[i, j, k])
+                    q_S[i, k] + L_S[j] - q_S[j, k] <= quicksum(Q_S[k] for k in vehicles) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles

@@ -256,6 +256,7 @@ class Model:
                 ),
                 name="SCapacity5",
             )
+
             m.addConstrs(
                 (
                     quicksum((Q_S[k] - L_S[i]) * x[n + i, j, k] for j in nodes_depots)
@@ -264,6 +265,15 @@ class Model:
                     for k in vehicles
                 ),
                 name="SCapacity6",
+            )
+
+            m.addConstrs(
+                (
+                    q_S[i, k] <= Q_S[k] * (1 - x[i, 2 * n + k + num_vehicles, k])
+                    for i in nodes_depots
+                    for k in vehicles
+                ),
+                name="SCapacity7",
             )
 
             # WHEELCHAIR SEATS CAPACITY CONSTRAINTS
@@ -313,6 +323,15 @@ class Model:
                     for k in vehicles
                 ),
                 name="WCapacity6",
+            )
+
+            m.addConstrs(
+                (
+                    q_W[i, k] <= Q_W[k] * (1 - x[i, 2 * n + k + num_vehicles, k])
+                    for i in nodes_depots
+                    for k in vehicles
+                ),
+                name="WCapacity7",
             )
 
             # TIME WINDOW CONSTRAINTS

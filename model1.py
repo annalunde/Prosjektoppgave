@@ -423,8 +423,7 @@ class Model:
                     print("%s %g" % (v.varName, v.x))
 
             for i in nodes:
-                for k in vehicles:
-                    print(
+                print(
                         t[i].varName,
                         datetime.fromtimestamp(t[i].x).strftime("%Y-%m-%d %H:%M:%S"),
                     )

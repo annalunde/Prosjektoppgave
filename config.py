@@ -51,7 +51,7 @@ for i in range(num_nodes_and_depots):
 # C_R = 10
 C_F = 1
 C_T = 1
-Q_S = [10, 10]
+Q_S = [5, 4]
 Q_W = [1, 1]
 L_S = [1, 2, 5, 2]  # Load for each request
 L_W = [0, 1, 0, 0]  # Wheelchair load for request

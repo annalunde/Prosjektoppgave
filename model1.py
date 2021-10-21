@@ -13,16 +13,35 @@ class Model:
     def vizualize_route(self, results):
         dot = graphviz.Digraph(engine="neato")
 
-        colors = ["green", "red", "blue"]
+        colors = [
+            "aquamarine",
+            "bisque",
+            "black",
+            "blue",
+            "blueviolet",
+            "brown",
+            "chartreuse",
+            "cornflowerblue",
+            "purple",
+            "darkmagenta",
+            "dodgerblue",
+            "greenyellow",
+            "fuchsia",
+            "mediumseagreen",
+            "navy",
+        ]
 
-        nodes = [i for i in range(2 * n)]
+        nodes = [i for i in range(num_nodes_and_depots)]
 
         for node in nodes:
-            state = "Pickup" if node < n else "Dropoff"  # legg til depots state
+            # nodes
+            state = "Pickup" if node < n else "Dropoff"
+            state = "Depot" if node >= 2 * n else state
+            number = node if node < n else node - n
             printable_label = (
                 f"State: {state}"
                 f"\nPos: {Position[node][0],Position[node][1]}"
-                f"\nToS: {Position[node][0],Position[node][1]}"
+                f"\nRequest No: {number}"
             )
             dot.node(
                 name=str(node),
@@ -31,15 +50,34 @@ class Model:
             )
 
         for v in results:
+            # edges
             if v.varName.startswith("x") and v.x > 0:
-                print("%s %g" % (v.varName, v.x))
-                # edgelabel = str(v.varName[6])
-                dot.edge(
-                    str(v.varName[2]),
-                    str(v.varName[4]),
-                    # label=edgelabel,
-                    color=colors[int(v.varName[6])]
+                var = (
+                    str(v.varName)
+                    .replace("x", "")
+                    .replace("[", "")
+                    .replace("]", "")
+                    .split(",")
                 )
+                try:
+                    edgelabel = datetime.fromtimestamp(
+                        next(
+                            a.x for a in results if a.varName == f"t[{var[0]},{var[2]}]"
+                        )
+                    ).strftime("%Y-%m-%d %H:%M:%S")
+                    dot.edge(
+                        str(var[0]),
+                        str(var[1]),
+                        label=edgelabel,
+                        color=colors[int(var[2])],
+                    )
+                except StopIteration as e:
+                    dot.edge(
+                        str(var[0]),
+                        str(var[1]),
+                        color=colors[int(var[2])],
+                    )
+                    continue
 
         dot.render(filename="route.gv", cleanup=True, view=True)
 
@@ -200,7 +238,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    q_S[i, k] + L_S[j] - q_S[j, k] <= quicksum(Q_S[k] for k in vehicles) * (1 - x[i, j, k])
+                    q_S[i, k] + L_S[j] - q_S[j, k] <= Q_S[k] * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -209,7 +247,7 @@ class Model:
             )
             m.addConstrs(
                 (
-                    q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S[k] * (1 - x[i, n+j, k])
+                    q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S[k] * (1 - x[i, n + j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -232,7 +270,6 @@ class Model:
                 ),
                 name="SCapacity4.2",
             )
-
             m.addConstrs(
                 (
                     quicksum((Q_S[k] - L_S[i]) * x[n + i, j, k] for j in nodes_depots)
@@ -252,15 +289,6 @@ class Model:
                 name="SCapacity6",
             )
 
-            m.addConstrs(
-                (
-                    q_S[i, k] <= Q_S[k] * (1 - x[i, 2 * n + k + num_vehicles, k])
-                    for i in nodes_depots
-                    for k in vehicles
-                ),
-                name="SCapacity7",
-            )
-
             # WHEELCHAIR SEATS CAPACITY CONSTRAINTS
             m.addConstrs(
                 (q_W[nodes_depots[2 * n + k], k] == 0 for k in vehicles),
@@ -268,7 +296,7 @@ class Model:
             )
             m.addConstrs(
                 (
-                    q_W[i, k] + L_W[j] - q_W[j, k] <= quicksum(Q_W[k] for k in vehicles) * (1 - x[i, j, k])
+                    q_W[i, k] + L_W[j] - q_W[j, k] <= Q_W[k] * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -277,7 +305,7 @@ class Model:
             )
             m.addConstrs(
                 (
-                    q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, n+j, k])
+                    q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, n + j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -317,15 +345,6 @@ class Model:
                     for k in vehicles
                 ),
                 name="WCapacity6",
-            )
-
-            m.addConstrs(
-                (
-                    q_W[i, k] <= Q_W[k] * (1 - x[i, 2 * n + k + num_vehicles, k])
-                    for i in nodes_depots
-                    for k in vehicles
-                ),
-                name="WCapacity7",
             )
 
             # TIME WINDOW CONSTRAINTS

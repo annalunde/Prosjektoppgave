@@ -1,8 +1,0 @@
-digraph {
-	5 [label="State: Pickup"]
-	5 [label="State: Pickup"]
-	5 [label="State: Pickup"]
-	5 [label="State: Dropoff"]
-	5 [label="State: Dropoff"]
-	5 [label="State: Dropoff"]
-}

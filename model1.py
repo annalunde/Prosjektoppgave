@@ -14,10 +14,11 @@ class Model:
         dot = graphviz.Digraph(engine="neato")
 
         colors = [
+            "blue",
+            "green",
             "aquamarine",
             "bisque",
             "black",
-            "blue",
             "blueviolet",
             "brown",
             "chartreuse",

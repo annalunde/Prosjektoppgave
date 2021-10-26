@@ -99,7 +99,7 @@ class Model:
             w = m.addVars(pickups, vtype=GRB.BINARY, name="w")
             q_S = m.addVars(nodes_depots, vehicles, vtype=GRB.INTEGER, name="q_S")
             q_W = m.addVars(nodes_depots, vehicles, vtype=GRB.INTEGER, name="q_W")
-            t = m.addVars(nodes, vehicles, name="t")
+            t = m.addVars(nodes, name="t")
             l = m.addVars(nodes, name="l")
             u = m.addVars(nodes, name="u")
             d = m.addVars(pickups, name="d")
@@ -239,7 +239,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    q_S[i, k] + L_S[j] - q_S[j, k] <= Q_S[k] * (1 - x[i, j, k])
+                    q_S[i, k] + L_S[j] - q_S[j, k] <= quicksum(Q_S[k] for k in vehicles) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -297,7 +297,7 @@ class Model:
             )
             m.addConstrs(
                 (
-                    q_W[i, k] + L_W[j] - q_W[j, k] <= Q_W[k] * (1 - x[i, j, k])
+                    q_W[i, k] + L_W[j] - q_W[j, k] <= quicksum(Q_W[k] for k in vehicles) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -349,37 +349,37 @@ class Model:
             )
 
             # TIME WINDOW CONSTRAINTS
+
             m.addConstrs(
                 (
-                    T_S_L[i].timestamp() - l[i] <= t[i, k]
+                    T_S_L[i].timestamp() - l[i] <= t[i]
                     for i in nodes
-                    for k in vehicles
                 ),
                 name="TimeWindow1.1",
             )
 
+
             m.addConstrs(
                 (
-                    t[i, k] <= T_S_U[i].timestamp() + u[i]
+                    t[i] <= T_S_U[i].timestamp() + u[i]
                     for i in nodes
-                    for k in vehicles
                 ),
                 name="TimeWindow1.2",
             )
 
             m.addConstrs(
-                (T_H_L[i].timestamp() <= t[i, k] for i in nodes for k in vehicles),
+                (T_H_L[i].timestamp() <= t[i] for i in nodes),
                 name="TimeWindow2.1",
             )
 
             m.addConstrs(
-                (t[i, k] <= T_H_U[i].timestamp() for i in nodes for k in vehicles),
+                (t[i] <= T_H_U[i].timestamp() for i in nodes),
                 name="TimeWindow2.2",
             )
 
             m.addConstrs(
                 (
-                    t[i, k] + T_ij[i][j].total_seconds() - t[j, k]
+                    t[i] + T_ij[i][j].total_seconds() - t[j]
                     <= M_ij[i][j].total_seconds() * (1 - x[i, j, k])
                     for i in nodes
                     for j in nodes
@@ -390,28 +390,27 @@ class Model:
 
             m.addConstrs(
                 (
-                    t[i, k] + T_ij[i][n + i].total_seconds() - t[n + i, k] <= 0
+                    t[i] + T_ij[i][n + i].total_seconds() - t[n + i] <= 0
                     for i in pickups
                     for k in vehicles
                 ),
                 name="TimeWindow4",
             )
 
+
             # RIDE TIME CONSTRAINTS
             m.addConstrs(
                 (
-                    t[n + i, k] - t[i, k] - (1 + F) * T_ij[i][n + i].total_seconds()
+                    t[n + i] - t[i] - (1 + F) * T_ij[i][n + i].total_seconds()
                     <= M * w[i]
                     for i in pickups
-                    for k in vehicles
                 ),
                 name="RideTime1",
             )
             m.addConstrs(
                 (
-                    d[i] >= t[n + i, k] - t[i, k] - M * (1 - w[i])
+                    d[i] >= t[n + i] - t[i] - M * (1 - w[i])
                     for i in pickups
-                    for k in vehicles
                 ),
                 name="RideTime2",
             )
@@ -424,10 +423,9 @@ class Model:
                     print("%s %g" % (v.varName, v.x))
 
             for i in nodes:
-                for k in vehicles:
-                    print(
-                        t[i, k].varName,
-                        datetime.fromtimestamp(t[i, k].x).strftime("%Y-%m-%d %H:%M:%S"),
+                print(
+                        t[i].varName,
+                        datetime.fromtimestamp(t[i].x).strftime("%Y-%m-%d %H:%M:%S"),
                     )
 
             print("Obj: %g" % m.objVal)

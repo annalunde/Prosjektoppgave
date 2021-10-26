@@ -14,6 +14,7 @@ class Model:
         dot = graphviz.Digraph(engine="neato")
 
         colors = [
+            "fuchsia",
             "blue",
             "green",
             "aquamarine",
@@ -27,7 +28,6 @@ class Model:
             "darkmagenta",
             "dodgerblue",
             "greenyellow",
-            "fuchsia",
             "mediumseagreen",
             "navy",
         ]
@@ -108,8 +108,8 @@ class Model:
             m.setObjective(
                 quicksum(
                     C_D[k] * D_ij[i][j] * x[i, j, k]
-                    for i in nodes
-                    for j in nodes
+                    for i in nodes_depots
+                    for j in nodes_depots
                     for k in vehicles
                 )
                 + quicksum(C_T * (l[i] + u[i]) for i in nodes)

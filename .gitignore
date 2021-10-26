@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Visualize
+route.
+
 # Data
 Data/
 data_RAT.csv

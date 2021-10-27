@@ -75,7 +75,7 @@ class ModelPreprocessor:
             df["Requested Pickup Time"] + timedelta(hours=6)
         )
 
-        df.to_csv("Data/Test/test_data.csv")
+        df.to_csv("test_data.csv")
         return df
 
 

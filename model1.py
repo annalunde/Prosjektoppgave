@@ -3,7 +3,7 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
-from config import *
+from config_RAT_data import *
 
 
 class Model:
@@ -41,13 +41,13 @@ class Model:
             number = node if node < n else node - n
             printable_label = (
                 f"State: {state}"
-                f"\nPos: {Position[node][0],Position[node][1]}"
+                f"\nPos: {Position[node][0]*500,Position[node][1]*500}"
                 f"\nRequest No: {number}"
             )
             dot.node(
                 name=str(node),
                 label=printable_label,
-                pos=f"{Position[node][0]},{Position[node][1]}!",
+                pos=f"{Position[node][0]*500},{Position[node][1]*500}!",
             )
 
         for v in results:
@@ -63,7 +63,7 @@ class Model:
                 try:
                     edgelabel = datetime.fromtimestamp(
                         next(
-                            a.x for a in results if a.varName == f"t[{var[0]},{var[2]}]"
+                            a.x for a in results if a.varName == f"t[{var[0]}]"
                         )
                     ).strftime("%Y-%m-%d %H:%M:%S")
                     dot.edge(

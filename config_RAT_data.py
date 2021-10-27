@@ -1,18 +1,18 @@
 import pandas as pd
 from sklearn.metrics.pairwise import haversine_distances
-from math import radians
+from math import radians, degrees
 from decouple import config
 import numpy as np
 from datetime import datetime, timedelta
 
 # Sets
-n = 3                 # number of pickup nodes
+n = 10                # number of pickup nodes
 num_vehicles = 3
 num_nodes = 2 * n
 num_nodes_and_depots = 2 * num_vehicles + 2 * n
 
 # Costs and penalties
-C_D = [1, 1, 1]         # per vehicle
+C_D = [1, 1, 1]         #git  per vehicle
 C_F = 1
 C_T = 1
 
@@ -35,18 +35,27 @@ origin_lat_lon = list(zip(np.deg2rad(df['Origin Lat']), np.deg2rad(df['Origin Ln
 destination_lat_lon = list(zip(np.deg2rad(df['Destination Lat']), np.deg2rad(df['Destination Lng'])))
 request_lat_lon = origin_lat_lon + destination_lat_lon
 
+# Positions in degrees
+origin_lat_lon_deg = list(zip(df['Origin Lat'], df['Origin Lng']))
+destination_lat_lon_deg = list(zip(df['Destination Lat'], df['Destination Lng']))
+request_lat_lon_deg = origin_lat_lon_deg + destination_lat_lon_deg
+
 vehicle_lat_lon = []
+vehicle_lat_lon_deg = []
 
 # Origins for each vehicle
 for i in range(num_vehicles):
     vehicle_lat_lon.append((radians(59.946829115276145), radians(10.779841653639243)))
+    vehicle_lat_lon_deg.append((59.946829115276145, 10.779841653639243))
 
 # Destinations for each vehicle
 for i in range(num_vehicles):
     vehicle_lat_lon.append((radians(59.946829115276145), radians(10.779841653639243)))
+    vehicle_lat_lon_deg.append((59.946829115276145, 10.779841653639243))
 
 # Positions
 lat_lon = request_lat_lon + vehicle_lat_lon
+Position = request_lat_lon_deg + vehicle_lat_lon_deg
 
 # Distance matrix
 D_ij = haversine_distances(lat_lon, lat_lon)*6371
@@ -75,3 +84,5 @@ for i in range(num_nodes):
 
 print(M_ij)
 M = timedelta(hours=24).total_seconds()  # in hours
+
+

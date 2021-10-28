@@ -104,6 +104,7 @@ class Model:
             u = m.addVars(nodes, name="u")
             d = m.addVars(pickups, name="d")
 
+
             # OBJECTIVE FUNCTION
             m.setObjective(
                 quicksum(
@@ -236,16 +237,28 @@ class Model:
                 (q_S[nodes_depots[2 * n + k], k] == 0 for k in vehicles),
                 name="SCapacity1",
             )
-
+            '''
             m.addConstrs(
                 (
-                    q_S[i, k] + L_S[j] - q_S[j, k] <= quicksum(Q_S[k] for k in vehicles) * (1 - x[i, j, k])
+                    q_S[i, k] + L_S[j] - q_S[j, k] <= quicksum(Q_S[v] for v in vehicles) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
                 ),
                 name="SCapacity2",
             )
+            '''
+
+            m.addConstrs(
+                (
+                    q_S[i, k] + L_S[j] - q_S[j, k] <= (Q_S[k] + L_S[j]) * (1 - x[i, j, k])
+                    for j in pickups
+                    for i in nodes_depots
+                    for k in vehicles
+                ),
+                name="SCapacity2",
+            )
+
             m.addConstrs(
                 (
                     q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S[k] * (1 - x[i, n + j, k])
@@ -255,6 +268,7 @@ class Model:
                 ),
                 name="SCapacity3",
             )
+
             m.addConstrs(
                 (
                     quicksum(L_S[i] * x[i, j, k] for j in nodes_depots) <= q_S[i, k]
@@ -263,6 +277,7 @@ class Model:
                 ),
                 name="SCapacity4.1",
             )
+
             m.addConstrs(
                 (
                     q_S[i, k] <= quicksum(Q_S[k] * x[i, j, k] for j in nodes_depots)
@@ -271,6 +286,7 @@ class Model:
                 ),
                 name="SCapacity4.2",
             )
+
             m.addConstrs(
                 (
                     quicksum((Q_S[k] - L_S[i]) * x[n + i, j, k] for j in nodes_depots)
@@ -284,7 +300,7 @@ class Model:
             m.addConstrs(
                 (
                     q_S[i, k] <= Q_S[k] * (1 - x[i, 2 * n + k + num_vehicles, k])
-                    for i in nodes_depots
+                    for i in dropoffs
                     for k in vehicles
                 ),
                 name="SCapacity6",
@@ -295,15 +311,28 @@ class Model:
                 (q_W[nodes_depots[2 * n + k], k] == 0 for k in vehicles),
                 name="WCapacity1",
             )
+            '''
             m.addConstrs(
                 (
-                    q_W[i, k] + L_W[j] - q_W[j, k] <= quicksum(Q_W[k] for k in vehicles) * (1 - x[i, j, k])
+                    q_W[i, k] + L_W[j] - q_W[j, k] <= quicksum(Q_W[v] for v in vehicles) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
                 ),
                 name="WCapacity2",
             )
+            '''
+
+            m.addConstrs(
+                (
+                    q_W[i, k] + L_W[j] - q_W[j, k] <= (Q_W[k] + L_W[j]) * (1 - x[i, j, k])
+                    for j in pickups
+                    for i in nodes_depots
+                    for k in vehicles
+                ),
+                name="WCapacity2",
+            )
+            
             m.addConstrs(
                 (
                     q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, n + j, k])
@@ -313,6 +342,7 @@ class Model:
                 ),
                 name="WCapacity3",
             )
+
             m.addConstrs(
                 (
                     quicksum(L_W[i] * x[i, j, k] for j in nodes_depots) <= q_W[i, k]
@@ -321,6 +351,7 @@ class Model:
                 ),
                 name="WCapacity4.1",
             )
+
             m.addConstrs(
                 (
                     q_W[i, k] <= quicksum(Q_W[k] * x[i, j, k] for j in nodes_depots)
@@ -329,6 +360,7 @@ class Model:
                 ),
                 name="WCapacity4.2",
             )
+
             m.addConstrs(
                 (
                     quicksum((Q_W[k] - L_W[i]) * x[n + i, j, k] for j in nodes_depots)
@@ -342,7 +374,7 @@ class Model:
             m.addConstrs(
                 (
                     q_W[i, k] <= Q_W[k] * (1 - x[i, 2 * n + k + num_vehicles, k])
-                    for i in nodes_depots
+                    for i in dropoffs
                     for k in vehicles
                 ),
                 name="WCapacity6",
@@ -417,6 +449,8 @@ class Model:
 
             # RUN MODEL
             m.optimize()
+            #m.computeIIS()
+            #m.write("model.ilp")
 
             for v in m.getVars():
                 if v.x > 0:
@@ -426,6 +460,13 @@ class Model:
                 print(
                         t[i].varName,
                         datetime.fromtimestamp(t[i].x).strftime("%Y-%m-%d %H:%M:%S"),
+                    )
+
+            for i in nodes:
+                for k in vehicles:
+                    print(
+                        q_S[i,k].varName,
+                        q_S[i,k].x
                     )
 
             print("Obj: %g" % m.objVal)
@@ -439,3 +480,4 @@ class Model:
 if __name__ == "__main__":
     model = Model()
     model.run_model()
+

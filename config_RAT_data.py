@@ -6,19 +6,19 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # Sets
-n = 10                # number of pickup nodes
+n = 30               # number of pickup nodes
 num_vehicles = 3
 num_nodes = 2 * n
 num_nodes_and_depots = 2 * num_vehicles + 2 * n
 
 # Costs and penalties
-C_D = [1, 1, 1]         #git  per vehicle
+C_D = [1, 1, 1]         # per vehicle
 C_F = 1
 C_T = 1
 
 # Capacity per vehicle
-Q_S = [5, 4, 16]
-Q_W = [1, 0 ,2]
+Q_S = [5, 6, 5]
+Q_W = [1, 0 , 2]
 
 # Allowed excess ride time
 F = 2
@@ -29,6 +29,8 @@ df = pd.read_csv(config("data_path_test"), nrows=n)
 # Load for each request
 L_S = df['Number of Passengers'].tolist()
 L_W = df['Wheelchair'].tolist()
+M_QS = sum(Q_S)
+M_QW = sum(Q_W)
 
 # Lat and lon for each request
 origin_lat_lon = list(zip(np.deg2rad(df['Origin Lat']), np.deg2rad(df['Origin Lng'])))
@@ -82,7 +84,6 @@ for i in range(num_nodes):
     for j in range(num_nodes):
         M_ij[i][j] = T_H_U[i] + T_ij[i][j] - T_H_L[j]
 
-print(M_ij)
 M = timedelta(hours=24).total_seconds()  # in hours
 
 

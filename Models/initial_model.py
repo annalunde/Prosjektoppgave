@@ -3,7 +3,7 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
-from config import *
+from initial_config import *
 
 
 class Model:
@@ -14,7 +14,6 @@ class Model:
         dot = graphviz.Digraph(engine="neato")
 
         colors = [
-            "fuchsia",
             "blue",
             "green",
             "aquamarine",
@@ -239,7 +238,8 @@ class Model:
 
             m.addConstrs(
                 (
-                    q_S[i, k] + L_S[j] - q_S[j, k] <= quicksum(Q_S[k] for k in vehicles) * (1 - x[i, j, k])
+                    q_S[i, k] + L_S[j] - q_S[j, k]
+                    <= quicksum(Q_S[k] for k in vehicles) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -297,7 +297,8 @@ class Model:
             )
             m.addConstrs(
                 (
-                    q_W[i, k] + L_W[j] - q_W[j, k] <= quicksum(Q_W[k] for k in vehicles) * (1 - x[i, j, k])
+                    q_W[i, k] + L_W[j] - q_W[j, k]
+                    <= quicksum(Q_W[k] for k in vehicles) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -351,19 +352,12 @@ class Model:
             # TIME WINDOW CONSTRAINTS
 
             m.addConstrs(
-                (
-                    T_S_L[i].timestamp() - l[i] <= t[i]
-                    for i in nodes
-                ),
+                (T_S_L[i].timestamp() - l[i] <= t[i] for i in nodes),
                 name="TimeWindow1.1",
             )
 
-
             m.addConstrs(
-                (
-                    t[i] <= T_S_U[i].timestamp() + u[i]
-                    for i in nodes
-                ),
+                (t[i] <= T_S_U[i].timestamp() + u[i] for i in nodes),
                 name="TimeWindow1.2",
             )
 
@@ -397,7 +391,6 @@ class Model:
                 name="TimeWindow4",
             )
 
-
             # RIDE TIME CONSTRAINTS
             m.addConstrs(
                 (
@@ -408,10 +401,7 @@ class Model:
                 name="RideTime1",
             )
             m.addConstrs(
-                (
-                    d[i] >= t[n + i] - t[i] - M * (1 - w[i])
-                    for i in pickups
-                ),
+                (d[i] >= t[n + i] - t[i] - M * (1 - w[i]) for i in pickups),
                 name="RideTime2",
             )
 
@@ -424,12 +414,19 @@ class Model:
 
             for i in nodes:
                 print(
-                        t[i].varName,
-                        datetime.fromtimestamp(t[i].x).strftime("%Y-%m-%d %H:%M:%S"),
-                    )
+                    t[i].varName,
+                    datetime.fromtimestamp(t[i].x).strftime("%Y-%m-%d %H:%M:%S"),
+                )
 
             print("Obj: %g" % m.objVal)
             self.vizualize_route(results=m.getVars())
+            l = {k: v.X for k, v in x.items()}
+            t = {k: v.X for k, v in t.items()}
+            q_S = {k: v.X for k, v in q_S.items()}
+            q_W = {k: v.X for k, v in q_W.items()}
+
+            # append n til final dict
+            # updater.update(route_plan=l })
 
         except GurobiError as e:
             print("Error reported")

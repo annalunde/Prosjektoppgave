@@ -233,21 +233,11 @@ class Model:
             )
 
             # STANDARD SEATS CAPACITY CONSTRAINTS
+
             m.addConstrs(
                 (q_S[nodes_depots[2 * n + k], k] == 0 for k in vehicles),
                 name="SCapacity1",
             )
-            '''
-            m.addConstrs(
-                (
-                    q_S[i, k] + L_S[j] - q_S[j, k] <= quicksum(Q_S[v] for v in vehicles) * (1 - x[i, j, k])
-                    for j in pickups
-                    for i in nodes_depots
-                    for k in vehicles
-                ),
-                name="SCapacity2",
-            )
-            '''
 
             m.addConstrs(
                 (
@@ -311,17 +301,6 @@ class Model:
                 (q_W[nodes_depots[2 * n + k], k] == 0 for k in vehicles),
                 name="WCapacity1",
             )
-            '''
-            m.addConstrs(
-                (
-                    q_W[i, k] + L_W[j] - q_W[j, k] <= quicksum(Q_W[v] for v in vehicles) * (1 - x[i, j, k])
-                    for j in pickups
-                    for i in nodes_depots
-                    for k in vehicles
-                ),
-                name="WCapacity2",
-            )
-            '''
 
             m.addConstrs(
                 (
@@ -332,7 +311,7 @@ class Model:
                 ),
                 name="WCapacity2",
             )
-            
+
             m.addConstrs(
                 (
                     q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, n + j, k])
@@ -424,7 +403,6 @@ class Model:
                 (
                     t[i] + T_ij[i][n + i].total_seconds() - t[n + i] <= 0
                     for i in pickups
-                    for k in vehicles
                 ),
                 name="TimeWindow4",
             )
@@ -447,6 +425,8 @@ class Model:
                 name="RideTime2",
             )
 
+
+
             # RUN MODEL
             m.optimize()
             #m.computeIIS()
@@ -459,7 +439,7 @@ class Model:
             for i in nodes:
                 print(
                         t[i].varName,
-                        datetime.fromtimestamp(t[i].x).strftime("%Y-%m-%d %H:%M:%S"),
+                        datetime.utcfromtimestamp(t[i].x).strftime("%Y-%m-%d %H:%M:%S"),
                     )
 
             for i in nodes:

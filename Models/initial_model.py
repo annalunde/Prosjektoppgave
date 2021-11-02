@@ -62,9 +62,7 @@ class Model:
                 )
                 try:
                     edgelabel = datetime.fromtimestamp(
-                        next(
-                            a.x for a in results if a.varName == f"t[{var[0]}]"
-                        )
+                        next(a.x for a in results if a.varName == f"t[{var[0]}]")
                     ).strftime("%Y-%m-%d %H:%M:%S")
                     dot.edge(
                         str(var[0]),
@@ -103,7 +101,6 @@ class Model:
             l = m.addVars(nodes, name="l")
             u = m.addVars(nodes, name="u")
             d = m.addVars(pickups, name="d")
-
 
             # OBJECTIVE FUNCTION
             m.setObjective(
@@ -235,16 +232,14 @@ class Model:
             # STANDARD SEATS CAPACITY CONSTRAINTS
 
             m.addConstrs(
-                (
-                    q_S[nodes_depots[2 * n + k], k] == 0
-                    for k in vehicles
-                ),
+                (q_S[nodes_depots[2 * n + k], k] == 0 for k in vehicles),
                 name="SCapacity1",
             )
 
             m.addConstrs(
                 (
-                    q_S[i, k] + L_S[j] - q_S[j, k] <= (Q_S[k] + L_S[j]) * (1 - x[i, j, k])
+                    q_S[i, k] + L_S[j] - q_S[j, k]
+                    <= (Q_S[k] + L_S[j]) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -307,7 +302,8 @@ class Model:
 
             m.addConstrs(
                 (
-                    q_W[i, k] + L_W[j] - q_W[j, k] <= (Q_W[k] + L_W[j]) * (1 - x[i, j, k])
+                    q_W[i, k] + L_W[j] - q_W[j, k]
+                    <= (Q_W[k] + L_W[j]) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -365,19 +361,12 @@ class Model:
             # TIME WINDOW CONSTRAINTS
 
             m.addConstrs(
-                (
-                    T_S_L[i].timestamp() - l[i] <= t[i]
-                    for i in nodes
-                ),
+                (T_S_L[i].timestamp() - l[i] <= t[i] for i in nodes),
                 name="TimeWindow1.1",
             )
 
-
             m.addConstrs(
-                (
-                    t[i] <= T_S_U[i].timestamp() + u[i]
-                    for i in nodes
-                ),
+                (t[i] <= T_S_U[i].timestamp() + u[i] for i in nodes),
                 name="TimeWindow1.2",
             )
 
@@ -410,8 +399,8 @@ class Model:
                 name="TimeWindow4",
             )
 
-
             # RIDE TIME CONSTRAINTS
+            """
             m.addConstrs(
                 (
                     t[n + i] - t[i] - (1 + F) * T_ij[i][n + i].total_seconds()
@@ -427,30 +416,42 @@ class Model:
                 ),
                 name="RideTime2",
             )
-
-
+            """
+            m.addConstrs(
+                (
+                    d[i] >= t[n + i] - (t[i] + (1 + F) * T_ij[i][n + i].total_seconds())
+                    for i in pickups
+                ),
+                name="RideTime1",
+            )
 
             # RUN MODEL
             m.optimize()
-            #m.computeIIS()
-            #m.write("model.ilp")
-
+            m.computeIIS()
+            m.write("model.ilp")
+            """
+            for c in m.GetConstrs():
+                if
+                {
+                    if (c.Get(GRB.IntAttr.IISConstr) > 0)
+                {
+                    Console.WriteLine(c.Get(GRB.StringAttr.ConstrName));
+                }
+            }
+            """
             for v in m.getVars():
                 if v.x > 0:
                     print("%s %g" % (v.varName, v.x))
 
             for i in nodes:
                 print(
-                        t[i].varName,
-                        datetime.utcfromtimestamp(t[i].x).strftime("%Y-%m-%d %H:%M:%S"),
-                    )
+                    t[i].varName,
+                    datetime.utcfromtimestamp(t[i].x).strftime("%Y-%m-%d %H:%M:%S"),
+                )
 
             for i in nodes:
                 for k in vehicles:
-                    print(
-                        q_S[i,k].varName,
-                        q_S[i,k].x
-                    )
+                    print(q_S[i, k].varName, q_S[i, k].x)
 
             print("Obj: %g" % m.objVal)
             self.vizualize_route(results=m.getVars())
@@ -463,4 +464,3 @@ class Model:
 if __name__ == "__main__":
     model = Model()
     model.run_model()
-

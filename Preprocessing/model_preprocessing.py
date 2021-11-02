@@ -90,7 +90,7 @@ class ModelPreprocessor:
         time = datetime(date[0], date[1], date[2], 9)
         print(time)
         df_filtered_after_9 = df_filtered[
-                 (df_filtered["Request Creation Time"] >= str(time))
+            (df_filtered["Request Creation Time"] >= str(time))
         ]
 
         return df_filtered
@@ -137,14 +137,14 @@ def main():
 
     try:
         preprocessor = ModelPreprocessor(data_path=config("data_path_RAT"))
-        """
+
         initial_model_data = preprocessor.process_RAT_for_initial_model(
             date=[2021, 5, 10]
         )
         preprocessor.add_time_windows(
             initial_model_data, filename="Data/Test/test_data_initial_model.csv"
         )
-        """
+
         reopt_model_data = preprocessor.process_RAT_events_for_reoptimization_model(
             date=[2021, 5, 10]
         )

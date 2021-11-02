@@ -6,7 +6,9 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # Sets
-n = 30      # number of pickup nodes
+n = 30
+
+# number of pickup nodes
 num_vehicles = 3
 num_nodes = 2 * n
 num_nodes_and_depots = 2 * num_vehicles + 2 * n
@@ -17,8 +19,8 @@ C_F = 1
 C_T = 1
 
 # Capacity per vehicle
-Q_S = [16, 16, 16, 16]
-Q_W = [1, 1, 1, 1]
+Q_S = [2, 2, 2, 16]
+Q_W = [0, 0, 0, 1]
 
 # Allowed excess ride time
 F = 2
@@ -84,6 +86,6 @@ for i in range(num_nodes):
     for j in range(num_nodes):
         M_ij[i][j] = T_H_U[i] + T_ij[i][j] - T_H_L[j]
 
-M = timedelta(hours=24).total_seconds()  # in hours
+M = timedelta(hours=2).total_seconds()  # in hours
 
 

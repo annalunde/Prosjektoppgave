@@ -233,7 +233,10 @@ class Model:
 
             # STANDARD SEATS CAPACITY CONSTRAINTS
             m.addConstrs(
-                (q_S[nodes_depots[2 * n + k], k] == 0 for k in vehicles),
+                (
+                    q_S[nodes_depots[2 * n + k], k] == 0
+                    for k in vehicles
+                ),
                 name="SCapacity1",
             )
 

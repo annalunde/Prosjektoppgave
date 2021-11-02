@@ -409,6 +409,7 @@ class Model:
 
 
             # RIDE TIME CONSTRAINTS
+            '''
             m.addConstrs(
                 (
                     t[n + i] - t[i] - (1 + F) * T_ij[i][n + i].total_seconds()
@@ -424,14 +425,30 @@ class Model:
                 ),
                 name="RideTime2",
             )
-
+            '''
+            m.addConstrs(
+                (
+                    d[i] >= t[n + i] - (t[i] + (1+F) * T_ij[i][n + i].total_seconds())
+                    for i in pickups
+                ),
+                name="RideTime1",
+            )
 
 
             # RUN MODEL
             m.optimize()
-            #m.computeIIS()
-            #m.write("model.ilp")
-
+            m.computeIIS()
+            m.write("model.ilp")
+            '''
+            for c in m.GetConstrs():
+                if
+                {
+                    if (c.Get(GRB.IntAttr.IISConstr) > 0)
+                {
+                    Console.WriteLine(c.Get(GRB.StringAttr.ConstrName));
+                }
+            }
+            '''
             for v in m.getVars():
                 if v.x > 0:
                     print("%s %g" % (v.varName, v.x))

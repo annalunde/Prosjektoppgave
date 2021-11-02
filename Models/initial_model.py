@@ -3,7 +3,7 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
-from config_RAT_data import *
+from initial_config import *
 
 
 class Model:
@@ -14,7 +14,6 @@ class Model:
         dot = graphviz.Digraph(engine="neato")
 
         colors = [
-            "fuchsia",
             "blue",
             "green",
             "aquamarine",
@@ -427,9 +426,10 @@ class Model:
 
             # RUN MODEL
             m.optimize()
+            """
             m.computeIIS()
             m.write("model.ilp")
-            """
+            
             for c in m.GetConstrs():
                 if
                 {

@@ -18,7 +18,7 @@ C_T = 1
 
 # Capacity per vehicle
 Q_S = [16, 16, 16, 16]
-Q_W = [1, 0, 1, 1]
+Q_W = [0, 0, 0, 0]
 
 # Allowed excess ride time
 F = 2

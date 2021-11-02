@@ -130,8 +130,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    quicksum(x[nodes_depots[2 * n + k], j, k] for j in nodes_depots)
-                    == 1
+                    quicksum(x[2 * n + k, j, k] for j in nodes_depots) == 1
                     for k in vehicles
                 ),
                 name="Flow3.1",
@@ -139,10 +138,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    quicksum(
-                        x[i, nodes_depots[2 * n + k + num_vehicles], k]
-                        for i in nodes_depots
-                    )
+                    quicksum(x[i, 2 * n + k + num_vehicles, k] for i in nodes_depots)
                     == 1
                     for k in vehicles
                 ),
@@ -152,11 +148,7 @@ class Model:
             # vehicles cannot drive into an origin
             m.addConstrs(
                 (
-                    quicksum(
-                        x[i, nodes_depots[2 * n + v], k]
-                        for i in nodes_depots
-                        for k in vehicles
-                    )
+                    quicksum(x[i, 2 * n + v, k] for i in nodes_depots for k in vehicles)
                     == 0
                     for v in vehicles
                 ),
@@ -167,7 +159,7 @@ class Model:
             m.addConstrs(
                 (
                     quicksum(
-                        x[nodes_depots[2 * n + v + num_vehicles], j, k]
+                        x[2 * n + v + num_vehicles, j, k]
                         for j in nodes_depots
                         for k in vehicles
                     )
@@ -181,7 +173,7 @@ class Model:
             m.addConstrs(
                 (
                     quicksum(
-                        x[nodes_depots[2 * n + v], j, k]
+                        x[2 * n + v, j, k]
                         for j in nodes_depots
                         for k in vehicles
                         if k != v
@@ -196,7 +188,7 @@ class Model:
             m.addConstrs(
                 (
                     quicksum(
-                        x[i, nodes_depots[2 * n + v + num_vehicles], k]
+                        x[i, 2 * n + v + num_vehicles, k]
                         for i in nodes_depots
                         for k in vehicles
                         if k != v
@@ -231,7 +223,7 @@ class Model:
             # STANDARD SEATS CAPACITY CONSTRAINTS
 
             m.addConstrs(
-                (q_S[nodes_depots[2 * n + k], k] == 0 for k in vehicles),
+                (q_S[2 * n + k, k] == 0 for k in vehicles),
                 name="SCapacity1",
             )
 
@@ -295,7 +287,7 @@ class Model:
 
             # WHEELCHAIR SEATS CAPACITY CONSTRAINTS
             m.addConstrs(
-                (q_W[nodes_depots[2 * n + k], k] == 0 for k in vehicles),
+                (q_W[2 * n + k, k] == 0 for k in vehicles),
                 name="WCapacity1",
             )
 
@@ -440,8 +432,8 @@ class Model:
             }
             """
             for v in m.getVars():
-                if v.x > 0:
-                    print("%s %g" % (v.varName, v.x))
+                # if v.x > 0:
+                print("%s %g" % (v.varName, v.x))
 
             for i in nodes:
                 print(

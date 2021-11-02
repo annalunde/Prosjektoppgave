@@ -23,9 +23,9 @@ class Updater:
         T_O = []  # time of service of request i in original plan
 
         # CREATE NEW SETS
-        P_N.append(self.event[pickup])
-        N_N.append(self.event[pickup])
-        N_N.append(self.event[dropoff])
+        P_N.append(self.route_plan[n] + 1)
+        N_N.append(self.route_plan[n] + 1)
+        N_N.append(self.event[dropoff])  # NOTE: assume that event is one request
 
         # CREATE REMAINING SETS
         time_now = datetime.datetime.now()
@@ -36,7 +36,9 @@ class Updater:
                     P_R.append(t_i)
                     T_O.append(self.route_plan[t][t_i])
                     N_R.append(t_i)
-                    N_R.append(t_i + self.route_plan[n])  # NOTE: dele denne opp senere
+
+        for i in N_R:
+            N_R.append(i + self.route_plan[n])
 
         for k in vehicles:
             for i in P_R:
@@ -46,8 +48,14 @@ class Updater:
         # CREATE UNION SETS
         P.append(v for v in P_R)
         P.append(v for v in P_N)
-        N.append(v for v in N_R)
-        N.append(v for v in N_N)
+        N.append(v for v in P_R)  # append remaining pickups
+        N.append(v for v in P_N)  # append new pickups
+        N.append(v for v in D_R)  # append remaining dropoffs
+        N.append(v for v in D_N)  # append new dropoff
+
+        # UPDATE INDEXES
+
+        return P_R, P_N, P, N_R, N_N, N, E_S, E_W, T_O
 
 
 def main():
@@ -65,7 +73,7 @@ if __name__ == "__main__":
 
 
 # TODO:
-# sett indeks på sett på nytt
 # lag en conversion mellom csv-requests og formatet vi trenger
 # sjekk sett i modell constraints
 # få opp koblingen
+# låse og åpne innenfor 2 timer

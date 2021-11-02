@@ -3,7 +3,8 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
-from config import *
+from reoptimization_config import *
+from updater_for_reopt import *
 
 
 class Model:
@@ -82,7 +83,6 @@ class Model:
 
         dot.render(filename="route.gv", cleanup=True, view=True)
 
-    # NOTE: må oppdatere set
     def run_model(self):
         try:
             m = gp.Model("mip2")
@@ -452,6 +452,8 @@ class Model:
 
             print("Obj: %g" % m.objVal)
             self.vizualize_route(results=m.getVars())
+
+            return 
 
         except GurobiError as e:
             print("Error reported")

@@ -420,13 +420,15 @@ class Model:
 
             print("Obj: %g" % m.objVal)
             self.vizualize_route(results=m.getVars())
-            l = {k: v.X for k, v in x.items()}
-            t = {k: v.X for k, v in t.items()}
-            q_S = {k: v.X for k, v in q_S.items()}
-            q_W = {k: v.X for k, v in q_W.items()}
 
-            # append n til final dict
-            # updater.update(route_plan=l })
+            result = dict()
+            result[l] = {k: v.X for k, v in x.items()}
+            result[t] = {k: v.X for k, v in t.items()}
+            result[q_S] = {k: v.X for k, v in q_S.items()}
+            result[q_W] = {k: v.X for k, v in q_W.items()}
+            result[n] = n
+
+            return result
 
         except GurobiError as e:
             print("Error reported")

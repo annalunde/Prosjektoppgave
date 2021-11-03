@@ -234,7 +234,7 @@ class Model:
                 (q_S[nodes_depots[2 * n + k], k] == 0 for k in vehicles),
                 name="SCapacity1",
             )
-            '''
+
             m.addConstrs(
                 (
                     q_S[i, k] + L_S[j] - q_S[j, k]
@@ -255,7 +255,7 @@ class Model:
                 ),
                 name="SCapacity3",
             )
-            '''
+
             m.addConstrs(
                 (
                     quicksum(L_S[i] * x[i, j, k] for j in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]])) <= q_S[i, k]
@@ -298,7 +298,7 @@ class Model:
                 (q_W[nodes_depots[2 * n + k], k] == 0 for k in vehicles),
                 name="WCapacity1",
             )
-            '''
+
             m.addConstrs(
                 (
                     q_W[i, k] + L_W[j] - q_W[j, k]
@@ -319,7 +319,7 @@ class Model:
                 ),
                 name="WCapacity3",
             )
-            '''
+
             m.addConstrs(
                 (
                     quicksum(L_W[i] * x[i, j, k] for j in nodes_depots) <= q_W[i, k]

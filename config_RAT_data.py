@@ -6,9 +6,7 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # Sets
-n = 30
-
-# number of pickup nodes
+n = 20     # number of pickup nodes
 num_vehicles = 3
 num_nodes = 2 * n
 num_nodes_and_depots = 2 * num_vehicles + 2 * n
@@ -19,8 +17,8 @@ C_F = 1
 C_T = 1
 
 # Capacity per vehicle
-Q_S = [2, 2, 2, 16]
-Q_W = [0, 0, 0, 1]
+Q_S = [16, 16, 16, 16]
+Q_W = [1, 0, 1, 1]
 
 # Allowed excess ride time
 F = 2
@@ -76,8 +74,6 @@ T_S_L = pd.to_datetime(df['T_S_L_P']).tolist() + pd.to_datetime(df['T_S_L_D']).t
 T_S_U = pd.to_datetime(df['T_S_U_P']).tolist() + pd.to_datetime(df['T_S_U_D']).tolist()
 T_H_L = pd.to_datetime(df['T_H_L_P']).tolist() + pd.to_datetime(df['T_H_L_D']).tolist()
 T_H_U = pd.to_datetime(df['T_H_U_P']).tolist() + pd.to_datetime(df['T_H_U_D']).tolist()
-print(T_S_L[0].timestamp())
-print(T_S_U)
 
 # Big M
 #dette må ses på - noen blir negative

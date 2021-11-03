@@ -234,14 +234,14 @@ class Model:
                 (q_S[nodes_depots[2 * n + k], k] == 0 for k in vehicles),
                 name="SCapacity1",
             )
-
+            '''
             m.addConstrs(
                 (
                     q_S[i, k] + L_S[j] - q_S[j, k]
                     <= (Q_S[k] + L_S[j]) * (1 - x[i, j, k])
                     for j in pickups
-                    for i in nodes_depots
                     for k in vehicles
+                    for i in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]])
                 ),
                 name="SCapacity2",
             )
@@ -250,15 +250,15 @@ class Model:
                 (
                     q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S[k] * (1 - x[i, n + j, k])
                     for j in pickups
-                    for i in nodes_depots
                     for k in vehicles
+                    for i in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]])
                 ),
                 name="SCapacity3",
             )
-
+            '''
             m.addConstrs(
                 (
-                    quicksum(L_S[i] * x[i, j, k] for j in nodes_depots) <= q_S[i, k]
+                    quicksum(L_S[i] * x[i, j, k] for j in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]])) <= q_S[i, k]
                     for i in pickups
                     for k in vehicles
                 ),
@@ -267,7 +267,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    q_S[i, k] <= quicksum(Q_S[k] * x[i, j, k] for j in nodes_depots)
+                    q_S[i, k] <= quicksum(Q_S[k] * x[i, j, k] for j in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]]))
                     for i in pickups
                     for k in vehicles
                 ),
@@ -276,7 +276,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    quicksum((Q_S[k] - L_S[i]) * x[n + i, j, k] for j in nodes_depots)
+                    quicksum((Q_S[k] - L_S[i]) * x[n + i, j, k] for j in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]]))
                     >= q_S[n + i, k]
                     for i in pickups
                     for k in vehicles
@@ -298,14 +298,14 @@ class Model:
                 (q_W[nodes_depots[2 * n + k], k] == 0 for k in vehicles),
                 name="WCapacity1",
             )
-
+            '''
             m.addConstrs(
                 (
                     q_W[i, k] + L_W[j] - q_W[j, k]
                     <= (Q_W[k] + L_W[j]) * (1 - x[i, j, k])
                     for j in pickups
-                    for i in nodes_depots
                     for k in vehicles
+                    for i in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]])
                 ),
                 name="WCapacity2",
             )
@@ -314,12 +314,12 @@ class Model:
                 (
                     q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, n + j, k])
                     for j in pickups
-                    for i in nodes_depots
                     for k in vehicles
+                    for i in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]])
                 ),
                 name="WCapacity3",
             )
-
+            '''
             m.addConstrs(
                 (
                     quicksum(L_W[i] * x[i, j, k] for j in nodes_depots) <= q_W[i, k]
@@ -449,9 +449,13 @@ class Model:
                     datetime.utcfromtimestamp(t[i].x).strftime("%Y-%m-%d %H:%M:%S"),
                 )
 
-            for i in nodes:
+            for i in nodes_depots:
                 for k in vehicles:
                     print(q_S[i, k].varName, q_S[i, k].x)
+
+            for i in nodes_depots:
+                for k in vehicles:
+                    print(q_W[i, k].varName, q_W[i, k].x)
 
             print("Obj: %g" % m.objVal)
             self.vizualize_route(results=m.getVars())

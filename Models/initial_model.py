@@ -4,12 +4,15 @@ from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
 from initial_config import *
-from gurobipy import *
 
 
-class Model:
+class InitialModel:
     def _init_(self):
-        model = "MIP 1"
+        self.model = "MIP 1"
+        self.n = n
+
+    def get_n(self):
+        return self.n
 
     def vizualize_route(self, results):
         dot = graphviz.Digraph(engine="neato")
@@ -94,13 +97,12 @@ class Model:
             x = m.addVars(
                 nodes_depots, nodes_depots, vehicles, vtype=GRB.BINARY, name="x"
             )
-            w = m.addVars(pickups, vtype=GRB.BINARY, name="w")
             q_S = m.addVars(nodes_depots, vehicles, vtype=GRB.INTEGER, name="q_S")
             q_W = m.addVars(nodes_depots, vehicles, vtype=GRB.INTEGER, name="q_W")
-            t = m.addVars(nodes, name="t")
-            l = m.addVars(nodes, name="l")
-            u = m.addVars(nodes, name="u")
-            d = m.addVars(pickups, name="d")
+            t = m.addVars(nodes, vtype=GRB.CONTINUOUS, name="t")
+            l = m.addVars(nodes, vtype=GRB.CONTINUOUS, name="l")
+            u = m.addVars(nodes, vtype=GRB.CONTINUOUS, name="u")
+            d = m.addVars(pickups, vtype=GRB.CONTINUOUS, name="d")
 
             # OBJECTIVE FUNCTION
             m.setObjective(
@@ -131,8 +133,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    quicksum(x[nodes_depots[2 * n + k], j, k] for j in nodes_depots)
-                    == 1
+                    quicksum(x[2 * n + k, j, k] for j in nodes_depots) == 1
                     for k in vehicles
                 ),
                 name="Flow3.1",
@@ -140,10 +141,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    quicksum(
-                        x[i, nodes_depots[2 * n + k + num_vehicles], k]
-                        for i in nodes_depots
-                    )
+                    quicksum(x[i, 2 * n + k + num_vehicles, k] for i in nodes_depots)
                     == 1
                     for k in vehicles
                 ),
@@ -153,11 +151,7 @@ class Model:
             # vehicles cannot drive into an origin
             m.addConstrs(
                 (
-                    quicksum(
-                        x[i, nodes_depots[2 * n + v], k]
-                        for i in nodes_depots
-                        for k in vehicles
-                    )
+                    quicksum(x[i, 2 * n + v, k] for i in nodes_depots for k in vehicles)
                     == 0
                     for v in vehicles
                 ),
@@ -168,7 +162,7 @@ class Model:
             m.addConstrs(
                 (
                     quicksum(
-                        x[nodes_depots[2 * n + v + num_vehicles], j, k]
+                        x[2 * n + v + num_vehicles, j, k]
                         for j in nodes_depots
                         for k in vehicles
                     )
@@ -182,7 +176,7 @@ class Model:
             m.addConstrs(
                 (
                     quicksum(
-                        x[nodes_depots[2 * n + v], j, k]
+                        x[2 * n + v, j, k]
                         for j in nodes_depots
                         for k in vehicles
                         if k != v
@@ -197,7 +191,7 @@ class Model:
             m.addConstrs(
                 (
                     quicksum(
-                        x[i, nodes_depots[2 * n + v + num_vehicles], k]
+                        x[i, 2 * n + v + num_vehicles, k]
                         for i in nodes_depots
                         for k in vehicles
                         if k != v
@@ -232,7 +226,7 @@ class Model:
             # STANDARD SEATS CAPACITY CONSTRAINTS
 
             m.addConstrs(
-                (q_S[nodes_depots[2 * n + k], k] == 0 for k in vehicles),
+                (q_S[2 * n + k, k] == 0 for k in vehicles),
                 name="SCapacity1",
             )
 
@@ -241,8 +235,8 @@ class Model:
                     q_S[i, k] + L_S[j] - q_S[j, k]
                     <= (Q_S[k] + L_S[j]) * (1 - x[i, j, k])
                     for j in pickups
-                    for k in vehicles
                     for i in nodes_depots
+                    for k in vehicles
                 ),
                 name="SCapacity2",
             )
@@ -251,15 +245,15 @@ class Model:
                 (
                     q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S[k] * (1 - x[i, n + j, k])
                     for j in pickups
-                    for k in vehicles
                     for i in nodes_depots
+                    for k in vehicles
                 ),
                 name="SCapacity3",
             )
 
             m.addConstrs(
                 (
-                    quicksum(L_S[i] * x[i, j, k] for j in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]])) <= q_S[i, k]
+                    quicksum(L_S[i] * x[i, j, k] for j in nodes_depots) <= q_S[i, k]
                     for i in pickups
                     for k in vehicles
                 ),
@@ -268,7 +262,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    q_S[i, k] <= quicksum(Q_S[k] * x[i, j, k] for j in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]]))
+                    q_S[i, k] <= quicksum(Q_S[k] * x[i, j, k] for j in nodes_depots)
                     for i in pickups
                     for k in vehicles
                 ),
@@ -277,7 +271,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    quicksum((Q_S[k] - L_S[i]) * x[n + i, j, k] for j in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]]))
+                    quicksum((Q_S[k] - L_S[i]) * x[n + i, j, k] for j in nodes_depots)
                     >= q_S[n + i, k]
                     for i in pickups
                     for k in vehicles
@@ -296,7 +290,7 @@ class Model:
 
             # WHEELCHAIR SEATS CAPACITY CONSTRAINTS
             m.addConstrs(
-                (q_W[nodes_depots[2 * n + k], k] == 0 for k in vehicles),
+                (q_W[2 * n + k, k] == 0 for k in vehicles),
                 name="WCapacity1",
             )
 
@@ -305,8 +299,8 @@ class Model:
                     q_W[i, k] + L_W[j] - q_W[j, k]
                     <= (Q_W[k] + L_W[j]) * (1 - x[i, j, k])
                     for j in pickups
-                    for k in vehicles
                     for i in nodes_depots
+                    for k in vehicles
                 ),
                 name="WCapacity2",
             )
@@ -315,8 +309,8 @@ class Model:
                 (
                     q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, n + j, k])
                     for j in pickups
-                    for k in vehicles
                     for i in nodes_depots
+                    for k in vehicles
                 ),
                 name="WCapacity3",
             )
@@ -400,23 +394,6 @@ class Model:
             )
 
             # RIDE TIME CONSTRAINTS
-            """
-            m.addConstrs(
-                (
-                    t[n + i] - t[i] - (1 + F) * T_ij[i][n + i].total_seconds()
-                    <= M * w[i]
-                    for i in pickups
-                ),
-                name="RideTime1",
-            )
-            m.addConstrs(
-                (
-                    d[i] >= t[n + i] - t[i] - M * (1 - w[i])
-                    for i in pickups
-                ),
-                name="RideTime2",
-            )
-            """
             m.addConstrs(
                 (
                     d[i] >= t[n + i] - (t[i] + (1 + F) * T_ij[i][n + i].total_seconds())
@@ -426,22 +403,8 @@ class Model:
             )
 
             # RUN MODEL
-            m.setParam(GRB.Param.NumericFocus, 3.0)
             m.optimize()
 
-            """
-            m.computeIIS()
-            m.write("model.ilp")
-            
-            for c in m.GetConstrs():
-                if
-                {
-                    if (c.Get(GRB.IntAttr.IISConstr) > 0)
-                {
-                    Console.WriteLine(c.Get(GRB.StringAttr.ConstrName));
-                }
-            }
-            """
             for v in m.getVars():
                 if v.x > 0:
                     print("%s %g" % (v.varName, v.x))
@@ -452,17 +415,24 @@ class Model:
                     datetime.utcfromtimestamp(t[i].x).strftime("%Y-%m-%d %H:%M:%S"),
                 )
 
-            for i in nodes_depots:
+            for i in nodes:
                 for k in vehicles:
                     print(q_S[i, k].varName, q_S[i, k].x)
 
-            for i in nodes_depots:
-                for k in vehicles:
-                    print(q_W[i, k].varName, q_W[i, k].x)
+            for i in pickups:
+                print(d[i].varName, d[i].x)
 
             print("Obj: %g" % m.objVal)
+
             self.vizualize_route(results=m.getVars())
 
+            route_plan = dict()
+            route_plan["x"] = {k: v.X for k, v in x.items()}
+            route_plan["t"] = {k: v.X for k, v in t.items()}
+            route_plan["q_S"] = {k: v.X for k, v in q_S.items()}
+            route_plan["q_W"] = {k: v.X for k, v in q_W.items()}
+
+            return route_plan
 
         except GurobiError as e:
             print("Error reported")
@@ -470,5 +440,5 @@ class Model:
 
 
 if __name__ == "__main__":
-    model = Model()
+    model = InitialModel()
     model.run_model()

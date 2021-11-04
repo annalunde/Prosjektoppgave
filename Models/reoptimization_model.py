@@ -105,7 +105,6 @@ class ReoptModel:
             x = m.addVars(
                 nodes_depots, nodes_depots, vehicles, vtype=GRB.BINARY, name="x"
             )
-            w = m.addVars(pickups, vtype=GRB.BINARY, name="w")
             q_S = m.addVars(nodes_depots, vehicles, vtype=GRB.INTEGER, name="q_S")
             q_W = m.addVars(nodes_depots, vehicles, vtype=GRB.INTEGER, name="q_W")
             t = m.addVars(nodes, name="t")
@@ -113,8 +112,8 @@ class ReoptModel:
             u = m.addVars(nodes, name="u")
             d = m.addVars(pickups, name="d")
             s = m.addVars(nodes,vtype=GRB.BINARY, name="s")
-            z_+ = m.addVars(pickups, name="z+")
-            z_- = m.addVars(pickups, name="z-")
+            z_plus = m.addVars(nodes_remaining, name="z+")
+            z_minus = m.addVars(nodes_remaining, name="z-")
             y = m.addVars(vehicles, vtype=GRB.BINARY, name="y")
 
             # OBJECTIVE FUNCTION
@@ -126,7 +125,10 @@ class ReoptModel:
                     for k in vehicles
                 )
                 + quicksum(C_T * (l[i] + u[i]) for i in nodes)
-                + quicksum(C_F * d[i] for i in pickups),
+                + quicksum(C_F * d[i] for i in pickups)
+                + quicksum(C_R * s[i] for i in pickups_new)
+                + quicksum(C_K * y[k] for k in vehicles)
+                + quicksum(C_O * (z_plus[i] - z_minus[i]) for i in nodes_remaining),
                 GRB.MINIMIZE,
             )
 
@@ -134,7 +136,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     quicksum(x[i, j, k] for j in nodes_depots for k in vehicles) == 1
-                    for i in pickups
+                    for i in pickups_remaining
                 ),
                 name="Flow1",
             )
@@ -253,13 +255,14 @@ class ReoptModel:
             m.addConstrs(
                 (
                     q_S[i, k] + L_S[j] - q_S[j, k]
-                    <= quicksum(Q_S[k] for k in vehicles) * (1 - x[i, j, k])
+                    <= (Q_S[k] + L_S[j]) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
                 ),
                 name="SCapacity2",
             )
+
             m.addConstrs(
                 (
                     q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S[k] * (1 - x[i, n + j, k])
@@ -269,6 +272,7 @@ class ReoptModel:
                 ),
                 name="SCapacity3",
             )
+
             m.addConstrs(
                 (
                     quicksum(L_S[i] * x[i, j, k] for j in nodes_depots) <= q_S[i, k]
@@ -277,6 +281,7 @@ class ReoptModel:
                 ),
                 name="SCapacity4.1",
             )
+
             m.addConstrs(
                 (
                     q_S[i, k] <= quicksum(Q_S[k] * x[i, j, k] for j in nodes_depots)
@@ -285,6 +290,7 @@ class ReoptModel:
                 ),
                 name="SCapacity4.2",
             )
+
             m.addConstrs(
                 (
                     quicksum((Q_S[k] - L_S[i]) * x[n + i, j, k] for j in nodes_depots)
@@ -298,7 +304,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     q_S[i, k] <= Q_S[k] * (1 - x[i, 2 * n + k + num_vehicles, k])
-                    for i in nodes_depots
+                    for i in dropoffs
                     for k in vehicles
                 ),
                 name="SCapacity6",
@@ -312,13 +318,14 @@ class ReoptModel:
             m.addConstrs(
                 (
                     q_W[i, k] + L_W[j] - q_W[j, k]
-                    <= quicksum(Q_W[k] for k in vehicles) * (1 - x[i, j, k])
+                    <= (Q_W[k] + L_W[j]) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
                 ),
                 name="WCapacity2",
             )
+
             m.addConstrs(
                 (
                     q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, n + j, k])
@@ -328,6 +335,7 @@ class ReoptModel:
                 ),
                 name="WCapacity3",
             )
+
             m.addConstrs(
                 (
                     quicksum(L_W[i] * x[i, j, k] for j in nodes_depots) <= q_W[i, k]
@@ -336,6 +344,7 @@ class ReoptModel:
                 ),
                 name="WCapacity4.1",
             )
+
             m.addConstrs(
                 (
                     q_W[i, k] <= quicksum(Q_W[k] * x[i, j, k] for j in nodes_depots)
@@ -344,6 +353,7 @@ class ReoptModel:
                 ),
                 name="WCapacity4.2",
             )
+
             m.addConstrs(
                 (
                     quicksum((Q_W[k] - L_W[i]) * x[n + i, j, k] for j in nodes_depots)
@@ -357,7 +367,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     q_W[i, k] <= Q_W[k] * (1 - x[i, 2 * n + k + num_vehicles, k])
-                    for i in nodes_depots
+                    for i in dropoffs
                     for k in vehicles
                 ),
                 name="WCapacity6",
@@ -399,23 +409,14 @@ class ReoptModel:
                 (
                     t[i] + T_ij[i][n + i].total_seconds() - t[n + i] <= 0
                     for i in pickups
-                    for k in vehicles
                 ),
                 name="TimeWindow4",
             )
 
             m.addConstrs(
                 (
-                    t[i] + T_ij[i][n + i].total_seconds() - t[n + i] <= 0
-                    for i in pickups
-                    for k in vehicles
-                ),
-                name="TimeWindow4",
-            )
-            m.addConstrs(
-                (
-                    T_O[i] - t[i] = z_+[i] - z_-[i]
-                    for i in pickups
+                    T_O[i] - t[i] = z_plus[i] - z_minus[i]
+                    for i in nodes_remaining
                     for k in vehicles
                 ),
                 name="TimeWindow5",
@@ -432,7 +433,7 @@ class ReoptModel:
 
             # REJECTION CONSTRAINTS
             m.addConstrs(
-                (s[i] = 1 - quicksum(x[i,j,k] for j in nodes for k in vehicles) for i in nodes)
+                (s[i] = 1 - quicksum(x[i,j,k] for j in nodes_depots for k in vehicles) for i in nodes)
                 name="Rejection1",
             )
             m.addConstrs(

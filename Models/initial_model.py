@@ -6,9 +6,13 @@ import graphviz
 from initial_config import *
 
 
-class Model:
+class InitialModel:
     def _init_(self):
-        model = "MIP 1"
+        self.model = "MIP 1"
+        self.n = n
+
+    def get_n(self):
+        return self.n
 
     def vizualize_route(self, results):
         dot = graphviz.Digraph(engine="neato")
@@ -93,13 +97,12 @@ class Model:
             x = m.addVars(
                 nodes_depots, nodes_depots, vehicles, vtype=GRB.BINARY, name="x"
             )
-            w = m.addVars(pickups, vtype=GRB.BINARY, name="w")
             q_S = m.addVars(nodes_depots, vehicles, vtype=GRB.INTEGER, name="q_S")
             q_W = m.addVars(nodes_depots, vehicles, vtype=GRB.INTEGER, name="q_W")
-            t = m.addVars(nodes, name="t")
-            l = m.addVars(nodes, name="l")
-            u = m.addVars(nodes, name="u")
-            d = m.addVars(pickups, name="d")
+            t = m.addVars(nodes, vtype=GRB.CONTINUOUS, name="t")
+            l = m.addVars(nodes, vtype=GRB.CONTINUOUS, name="l")
+            u = m.addVars(nodes, vtype=GRB.CONTINUOUS, name="u")
+            d = m.addVars(pickups, vtype=GRB.CONTINUOUS, name="d")
 
             # OBJECTIVE FUNCTION
             m.setObjective(
@@ -391,23 +394,6 @@ class Model:
             )
 
             # RIDE TIME CONSTRAINTS
-            """
-            m.addConstrs(
-                (
-                    t[n + i] - t[i] - (1 + F) * T_ij[i][n + i].total_seconds()
-                    <= M * w[i]
-                    for i in pickups
-                ),
-                name="RideTime1",
-            )
-            m.addConstrs(
-                (
-                    d[i] >= t[n + i] - t[i] - M * (1 - w[i])
-                    for i in pickups
-                ),
-                name="RideTime2",
-            )
-            """
             m.addConstrs(
                 (
                     d[i] >= t[n + i] - (t[i] + (1 + F) * T_ij[i][n + i].total_seconds())
@@ -418,22 +404,10 @@ class Model:
 
             # RUN MODEL
             m.optimize()
-            """
-            m.computeIIS()
-            m.write("model.ilp")
-            
-            for c in m.GetConstrs():
-                if
-                {
-                    if (c.Get(GRB.IntAttr.IISConstr) > 0)
-                {
-                    Console.WriteLine(c.Get(GRB.StringAttr.ConstrName));
-                }
-            }
-            """
+
             for v in m.getVars():
-                # if v.x > 0:
-                print("%s %g" % (v.varName, v.x))
+                if v.x > 0:
+                    print("%s %g" % (v.varName, v.x))
 
             for i in nodes:
                 print(
@@ -445,8 +419,20 @@ class Model:
                 for k in vehicles:
                     print(q_S[i, k].varName, q_S[i, k].x)
 
+            for i in pickups:
+                print(d[i].varName, d[i].x)
+
             print("Obj: %g" % m.objVal)
+
             self.vizualize_route(results=m.getVars())
+
+            route_plan = dict()
+            route_plan["x"] = {k: v.X for k, v in x.items()}
+            route_plan["t"] = {k: v.X for k, v in t.items()}
+            route_plan["q_S"] = {k: v.X for k, v in q_S.items()}
+            route_plan["q_W"] = {k: v.X for k, v in q_W.items()}
+
+            return route_plan
 
         except GurobiError as e:
             print("Error reported")
@@ -454,5 +440,5 @@ class Model:
 
 
 if __name__ == "__main__":
-    model = Model()
+    model = InitialModel()
     model.run_model()

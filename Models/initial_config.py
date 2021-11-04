@@ -5,9 +5,10 @@ from decouple import config
 import numpy as np
 from datetime import datetime, timedelta
 
+
 # Sets
-n = 24  # number of pickup nodes
-num_vehicles = 4
+n = 5  # number of pickup nodes
+num_vehicles = 3
 num_nodes = 2 * n
 num_nodes_and_depots = 2 * num_vehicles + 2 * n
 

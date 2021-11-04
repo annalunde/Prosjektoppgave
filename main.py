@@ -1,12 +1,15 @@
+import time
 import gurobipy as gp
 from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 from decouple import config
-from Models import *
+from models import *
+from models.initial_model import InitialModel
+from models.reoptimization_model import ReoptModel
 
 
-def main():
+def main(num_events=10, sleep=30):
     """
     This function performs a run for the DDDARP problem, where requests that are known in advance are planned and routed initially,
     as well as new requests are received throughout the day. When a new request arrives, a reoptimization model is utilized to first
@@ -14,8 +17,26 @@ def main():
     and the new request.
     """
 
-    initial_route_plan = 
+    # Initial Route Plan
+    init_model = InitialModel()
+    initial_route_plan = init_model.run_model()
+    num_requests = init_model.get_n()
+
+    # Event Based Rerouting
+    for i in range(num_events):
+        event = get_event(i)
+        num_requests += 1
+        reopt_model = ReoptModel(initial_route_plan, event, num_requests)
+        reopt_plan = reopt_model.run_model()
+        time.sleep(sleep)
+
+
+def get_event(i):
+    df = pd.read_csv(config("data_path_events"))
+    return df.iloc[i]
 
 
 if __name__ == "__main__":
-    main()
+    num_events = 12
+    sleep = 30
+    main(num_events, sleep)

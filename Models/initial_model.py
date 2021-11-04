@@ -103,6 +103,21 @@ class Model:
             d = m.addVars(pickups, name="d")
 
             # OBJECTIVE FUNCTION
+
+            m.setObjectiveN(quicksum(
+                    C_D[k] * D_ij[i][j] * x[i, j, k]
+                    for i in nodes_depots
+                    for j in nodes_depots
+                    for k in vehicles
+                ), index=0, weight=1)
+
+            m.setObjectiveN(
+                quicksum(C_T * (l[i] + u[i]) for i in nodes)
+                + quicksum(C_F * d[i] for i in pickups), index=1, weight=1)
+
+            m.ModelSense = GRB.MINIMIZE
+
+            """
             m.setObjective(
                 quicksum(
                     C_D[k] * D_ij[i][j] * x[i, j, k]
@@ -115,6 +130,7 @@ class Model:
                 GRB.MINIMIZE,
             )
 
+            """
             # FLOW CONSTRAINTS
             m.addConstrs(
                 (
@@ -426,7 +442,7 @@ class Model:
             )
 
             # RUN MODEL
-            m.setParam(GRB.Param.NumericFocus, 3.0)
+            m.setParam(GRB.Param.NumericFocus, 3)
             m.optimize()
 
             """
@@ -460,7 +476,17 @@ class Model:
                 for k in vehicles:
                     print(q_W[i, k].varName, q_W[i, k].x)
 
-            print("Obj: %g" % m.objVal)
+            obj1 = m.getObjective(index=0)
+            print("Operational costs")
+            print(obj1.getValue())
+            obj2 = m.getObjective(index=1)
+            print("Quality of service")
+            print(obj2.getValue())
+
+            obj3 = obj1.getValue()+obj2.getValue()
+            print("Total")
+            print(obj3)
+
             self.vizualize_route(results=m.getVars())
 
 

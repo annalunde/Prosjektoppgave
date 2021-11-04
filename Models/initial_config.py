@@ -6,22 +6,22 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # Sets
-n = 30  # number of pickup nodes
+n = 10  # number of pickup nodes
 num_vehicles = 4
 num_nodes = 2 * n
 num_nodes_and_depots = 2 * num_vehicles + 2 * n
 
 # Costs and penalties
 C_D = [1, 1, 1, 1, 1, 1]  # per vehicle
-C_F = 1
-C_T = 1
+C_F = 1/60
+C_T = 1/60
 
 # Capacity per vehicle
 Q_S = [10, 10, 10, 10]
 Q_W = [1, 1, 1, 1]
 
 # Allowed excess ride time
-F = 5
+F = 0.5
 
 # Different parameters per node
 df = pd.read_csv(config("data_path_test"), nrows=n)

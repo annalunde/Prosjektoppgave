@@ -4,6 +4,7 @@ from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
 from initial_config import *
+from gurobipy import *
 
 
 class Model:
@@ -241,7 +242,7 @@ class Model:
                     <= (Q_S[k] + L_S[j]) * (1 - x[i, j, k])
                     for j in pickups
                     for k in vehicles
-                    for i in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]])
+                    for i in nodes_depots
                 ),
                 name="SCapacity2",
             )
@@ -251,7 +252,7 @@ class Model:
                     q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S[k] * (1 - x[i, n + j, k])
                     for j in pickups
                     for k in vehicles
-                    for i in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]])
+                    for i in nodes_depots
                 ),
                 name="SCapacity3",
             )
@@ -305,7 +306,7 @@ class Model:
                     <= (Q_W[k] + L_W[j]) * (1 - x[i, j, k])
                     for j in pickups
                     for k in vehicles
-                    for i in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]])
+                    for i in nodes_depots
                 ),
                 name="WCapacity2",
             )
@@ -315,7 +316,7 @@ class Model:
                     q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, n + j, k])
                     for j in pickups
                     for k in vehicles
-                    for i in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]])
+                    for i in nodes_depots
                 ),
                 name="WCapacity3",
             )
@@ -425,7 +426,9 @@ class Model:
             )
 
             # RUN MODEL
+            m.setParam(GRB.Param.NumericFocus, 3.0)
             m.optimize()
+
             """
             m.computeIIS()
             m.write("model.ilp")
@@ -459,6 +462,7 @@ class Model:
 
             print("Obj: %g" % m.objVal)
             self.vizualize_route(results=m.getVars())
+
 
         except GurobiError as e:
             print("Error reported")

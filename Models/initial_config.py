@@ -6,8 +6,8 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # Sets
-n = 24  # number of pickup nodes
-num_vehicles = 3
+n = 30  # number of pickup nodes
+num_vehicles = 4
 num_nodes = 2 * n
 num_nodes_and_depots = 2 * num_vehicles + 2 * n
 
@@ -17,11 +17,11 @@ C_F = 1
 C_T = 1
 
 # Capacity per vehicle
-Q_S = [16, 16, 16, 16]
-Q_W = [0, 0, 0, 0]
+Q_S = [10, 10, 10, 10]
+Q_W = [1, 1, 1, 1]
 
 # Allowed excess ride time
-F = 2
+F = 5
 
 # Different parameters per node
 df = pd.read_csv(config("data_path_test"), nrows=n)
@@ -36,7 +36,6 @@ destination_lat_lon = list(
     zip(np.deg2rad(df["Destination Lat"]), np.deg2rad(df["Destination Lng"]))
 )
 request_lat_lon = origin_lat_lon + destination_lat_lon
-print(request_lat_lon)
 
 # Positions in degrees
 origin_lat_lon_deg = list(zip(df["Origin Lat"], df["Origin Lng"]))

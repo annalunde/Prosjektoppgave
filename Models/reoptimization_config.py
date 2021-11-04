@@ -14,15 +14,12 @@ C_R = 10  # lost revenue from not serving a request
 C_K = [100, 100, 100, 100, 100]  # cost of using vehicle k
 C_O = 10  # cost of deviation from original plan
 
-
 # Capacity per vehicle
 Q_S = [16, 16, 16, 16]
 Q_W = [1, 1, 1, 1]
 
-
 # Allowed excess ride time
 F = 0.5
 
-
 # Number of hours to open to reoptimize
-H = 2
+H = 1

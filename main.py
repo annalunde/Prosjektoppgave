@@ -9,7 +9,7 @@ from models.initial_model import InitialModel
 from models.reoptimization_model import ReoptModel
 
 
-def main(num_events=10, sleep=30):
+def main(num_events=10, sleep=60):
     """
     This function performs a run for the DDDARP problem, where requests that are known in advance are planned and routed initially,
     as well as new requests are received throughout the day. When a new request arrives, a reoptimization model is utilized to first
@@ -29,6 +29,7 @@ def main(num_events=10, sleep=30):
         reopt_model = ReoptModel(initial_route_plan, event, num_requests)
         reopt_plan = reopt_model.run_model()
         time.sleep(sleep)
+        initia_route_plan = reopt_plan
 
 
 def get_event(i):
@@ -38,5 +39,5 @@ def get_event(i):
 
 if __name__ == "__main__":
     num_events = 12
-    sleep = 30
+    sleep = 300
     main(num_events, sleep)

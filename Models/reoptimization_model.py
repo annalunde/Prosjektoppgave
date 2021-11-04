@@ -464,7 +464,6 @@ class ReoptModel:
             route_plan["q_W"] = {k: v.X for k, v in q_W.items()}
 
             return route_plan
-            return 
 
         except GurobiError as e:
             print("Error reported")

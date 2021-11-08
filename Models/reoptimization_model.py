@@ -9,12 +9,12 @@ from models.updater_for_reopt import Updater
 
 
 class ReoptModel:
-    def _init_(self, current_route_plan, event, num_requests, first):
+    def __init__(self, current_route_plan, event, num_requests, first):
         self.model = "MIP 1"
         self.route_plan = current_route_plan
         self.event = event
         self.num_requests = num_requests
-        self.udpater = Updater(self.route_plan, self.event, self.num_requests, first)
+        self.updater = Updater(self.route_plan, self.event, self.num_requests, first)
 
     def vizualize_route(self, results):
         dot = graphviz.Digraph(engine="neato")
@@ -482,6 +482,11 @@ class ReoptModel:
                 )
 
             print("Obj: %g" % m.objVal)
+
+            if s > 0.1:
+                print("Your request has been rejected:/")
+                exit
+
             self.vizualize_route(results=m.getVars())
 
             route_plan = dict()
@@ -495,8 +500,3 @@ class ReoptModel:
         except GurobiError as e:
             print("Error reported")
             print(e.message)
-
-
-if __name__ == "__main__":
-    model = Model()
-    model.run_model()

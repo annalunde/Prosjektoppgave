@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from scipy.spatial import distance
 
 # Vehicles
-num_vehicles = 3
+num_vehicles = 3  # NOTE: cannot be set lower than initial config num_vehicles
 
 # Costs and penalties
 C_D = [1, 1, 1, 1, 1, 1]  # per vehicle

@@ -7,12 +7,11 @@ from models.initial_config import *
 
 
 class InitialModel:
-    def _init_(self):
+    def __init__(self):
         self.model = "MIP 1"
-        self.n = n
 
     def get_n(self):
-        return self.n
+        return n
 
     def vizualize_route(self, results):
         dot = graphviz.Digraph(engine="neato")
@@ -424,7 +423,7 @@ class InitialModel:
 
             print("Obj: %g" % m.objVal)
 
-            self.vizualize_route(results=m.getVars())
+            # self.vizualize_route(results=m.getVars())
 
             route_plan = dict()
             route_plan["x"] = {k: v.X for k, v in x.items()}

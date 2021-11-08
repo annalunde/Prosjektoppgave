@@ -12,6 +12,7 @@ class Updater:
         self.route_plan = current_route_plan  # dictionary with variable values
         self.event = event  # dataframe row
         self.num_requests = num_requests
+        self.data_file = None
 
     def update(self):
         P_R = []  # set of remaining pick-up nodes
@@ -39,11 +40,12 @@ class Updater:
         time_request = event["Requested Pickup Time"]
         time_request = event["Requested Dropoff Time"] if event["Requested Pickup Time"].isna()
         time_request_U = time_request + timedelta(hours=H)
-        time_request_L = time_request - timedelta(hours=H) if (time_request - timedelta(hours=2)) > time_now else time_now
+        time_request_L = time_request - timedelta(hours=H) if (time_request - timedelta(hours=H)) > time_now else time_now
 
         for t_i in self.route_plan["t"].keys():
             if self.route_plan["t"][t_i] < time_request_U and self.route_plan["t"][t_i] > time_request_L:
                 if t_i[0] <= self.num_requests - 1:
+
                     P_R.append(t_i[0])
                     T_O.append(self.route_plan["t"][t_i])
                     N_R.append(t_i[0])
@@ -65,6 +67,8 @@ class Updater:
         N.append(v for v in N_N not in P_N)  # append new dropoff
 
         # UPDATE INDEXES
+
+        
 
         # Load for each request
         L_S = event["Number of Passengers"].tolist()  # load for new
@@ -166,5 +170,4 @@ if __name__ == "__main__":
 
 
 # TODO:
-# sjekk sett i modell constraints
 # låse og åpne innenfor 2 timer

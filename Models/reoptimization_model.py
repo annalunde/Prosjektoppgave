@@ -5,11 +5,16 @@ from gurobipy import quicksum
 import graphviz
 from reoptimization_config import *
 from updater_for_reopt import *
+from updater_for_reopt import Updater
 
 
-class Model:
-    def _init_(self):
-        model = "MIP 2"
+class ReoptModel:
+    def _init_(self,current_route_plan,event,num_requests):
+        self.model = "MIP 1"
+        self.route_plan = current_route_plan
+        self.event = event
+        self.num_requests = num_requests
+        self.udpater = Updater(self.route_plan, self.event,self.num_requests)
 
     def vizualize_route(self, results):
         dot = graphviz.Digraph(engine="neato")
@@ -84,8 +89,11 @@ class Model:
         dot.render(filename="route.gv", cleanup=True, view=True)
 
     def run_model(self):
+        # update sets with new request
+        self.updater.update()
+
         try:
-            m = gp.Model("mip2")
+            m = gp.Model("mip1")
 
             pickups = [i for i in range(n)]
             dropoffs = [i for i in range(n, 2 * n)]
@@ -416,15 +424,10 @@ class Model:
             # RIDE TIME CONSTRAINTS
             m.addConstrs(
                 (
-                    t[n + i] - t[i] - (1 + F) * T_ij[i][n + i].total_seconds()
-                    <= M * w[i]
+                    d[i] >= t[n + i] - (t[i] + (1 + F) * T_ij[i][n + i].total_seconds())
                     for i in pickups
                 ),
                 name="RideTime1",
-            )
-            m.addConstrs(
-                (d[i] >= t[n + i] - t[i] - M * (1 - w[i]) for i in pickups),
-                name="RideTime2",
             )
 
             # REJECTION CONSTRAINTS
@@ -453,7 +456,14 @@ class Model:
             print("Obj: %g" % m.objVal)
             self.vizualize_route(results=m.getVars())
 
-            return 
+
+            route_plan = dict()
+            route_plan["x"] = {k: v.X for k, v in x.items()}
+            route_plan["t"] = {k: v.X for k, v in t.items()}
+            route_plan["q_S"] = {k: v.X for k, v in q_S.items()}
+            route_plan["q_W"] = {k: v.X for k, v in q_W.items()}
+
+            return route_plan
 
         except GurobiError as e:
             print("Error reported")

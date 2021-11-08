@@ -5,7 +5,8 @@ from gurobipy import quicksum
 import graphviz
 from models.reoptimization_config import *
 from models.updater_for_reopt import *
-from models.updater_for_reopt import Updater
+
+# from models.updater_for_reopt import Updater
 
 
 class ReoptModel:
@@ -98,7 +99,7 @@ class ReoptModel:
             pickups = [i for i in range(self.num_requests)]
             dropoffs = [i for i in range(self.num_requests, 2 * self.num_requests)]
             nodes = [i for i in range(2 * self.num_requests)]
-            nodes_depots = [i for i in range(num_nodes_and_depots)]
+            nodes_depots = [i for i in range(self.updater.num_nodes_and_depots)]
             vehicles = [i for i in range(num_vehicles)]
 
             # Create variables

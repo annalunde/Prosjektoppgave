@@ -5,7 +5,9 @@ from decouple import config
 from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
+from math import radians, degrees
 from models.reoptimization_config import *
+from sklearn.metrics.pairwise import haversine_distances
 
 
 class Updater:
@@ -39,6 +41,7 @@ class Updater:
         # CREATE ALL SETS
         pickups = [i for i in range(self.num_requests)]
         nodes = [i for i in range(2 * self.num_requests)]
+        vehicles = [i for i in range(num_vehicles)]
 
         # FETCH DATA
         if self.first:
@@ -52,11 +55,11 @@ class Updater:
             df.to_csv(f"data_requests_for:{self.num_requests}")
 
         # CREATE REMAINING SETS
-        time_now = self.event["Request Creation Time"]
-        time_request = self.event["Requested Pickup Time"]
+        time_now = pd.to_datetime(self.event["Request Creation Time"])
+        time_request = pd.to_datetime(self.event["Requested Pickup Time"])
         time_request = (
-            self.event["Requested Dropoff Time"]
-            if self.event["Requested Pickup Time"].isna()
+            pd.to_datetime(self.event["Requested Dropoff Time"])
+            if pd.isna(self.event["Requested Pickup Time"])
             else time_request
         )
         time_request_U = time_request + timedelta(hours=H)
@@ -69,13 +72,13 @@ class Updater:
         for t_i in self.route_plan["t"].keys():
             # T_O.append(self.route_plan["t"][t_i]) #NOTE if for all pickup nodes
             if (
-                self.route_plan["t"][t_i] < time_request_U
-                and self.route_plan["t"][t_i] > time_request_L
+                pd.to_datetime(self.route_plan["t"][t_i]) < time_request_U
+                and pd.to_datetime(self.route_plan["t"][t_i]) > time_request_L
             ):
                 if t_i[0] <= self.num_requests - 1:
                     pickups_remaining.append(t_i[0])
                     T_O.append(
-                        self.route_plan["t"][t_i]
+                        pd.to_datetime(self.route_plan["t"][t_i])
                     )  # NOTE if only pickup nodes that are open
                     nodes_remaining.append(t_i[0])
                     nodes_remaining.append(t_i[0] + self.num_requests)

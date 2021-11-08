@@ -161,12 +161,15 @@ class Updater:
         # return P_R, P_N, P, N_R, N_N, N, E_S, E_W, T_O
 
     def update_time_windows(self, i):
-            T_S_L[i] -= timedelta(minutes=5)
-            T_H_L[i] -= timedelta(minutes=5)
-            T_S_U[i] += timedelta(minutes=5)
-            T_H_U[i] += timedelta(minutes=5)
+        T_S_L[i] -= timedelta(minutes=5)
+        T_H_L[i] -= timedelta(minutes=5)
+        T_S_U[i] += timedelta(minutes=5)
+        T_H_U[i] += timedelta(minutes=5)
 
-    def remove_rejected_request(self, i):
+    def remove_rejected_request(self):
+        df = pd.read_csv(f"data_requests_for:{self.num_requests}")
+        df = df.head(-1)
+        df.to_csv(f"data_requests_for:{self.num_requests-1}")
 
 def main():
     updater = None

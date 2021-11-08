@@ -14,7 +14,7 @@ class ReoptModel:
         self.route_plan = current_route_plan
         self.event = event
         self.num_requests = num_requests
-        self.udpater = Updater(self.route_plan, self.event, self.num_requests, first)
+        self.updater = Updater(self.route_plan, self.event, self.num_requests, first)
 
     def vizualize_route(self, results):
         dot = graphviz.Digraph(engine="neato")
@@ -117,6 +117,7 @@ class ReoptModel:
             y = m.addVars(vehicles, vtype=GRB.BINARY, name="y")
 
             # OBJECTIVE FUNCTION
+            """
             m.setObjective(
                 quicksum(
                     C_D[k] * D_ij[i][j] * x[i, j, k]
@@ -131,6 +132,26 @@ class ReoptModel:
                 + quicksum(C_O * (z_plus[i] - z_minus[i]) for i in nodes_remaining),
                 GRB.MINIMIZE,
             )
+            """
+
+            m.setObjectiveN(
+                quicksum(
+                    C_D[k] * D_ij[i][j] * x[i, j, k]
+                    for i in nodes_depots
+                    for j in nodes_depots
+                    for k in vehicles
+                )
+                + quicksum(C_K * y[k] for k in vehicles),
+                index=0, weight=0.5)
+
+            m.setObjectiveN(
+                quicksum(C_T * (l[i] + u[i]) for i in nodes)
+                + quicksum(C_F * d[i] for i in pickups)
+                + quicksum(C_R * s[i] for i in pickups_new)
+                + quicksum(C_O * (z_plus[i] - z_minus[i]) for i in nodes_remaining),
+                index = 1, weight=0.5)
+
+            m.ModelSense = GRB.MINIMIZE
 
             # FLOW CONSTRAINTS
             m.addConstrs(
@@ -471,14 +492,16 @@ class ReoptModel:
             # RUN MODEL
             m.optimize()
 
-            counter = 0
+            # RERUN MODEL IF REQUEST IS REJECTED
+
             for i in nodes:
+                counter = 0
                 while s[i].x == 1 and counter < R:
                     self.updater.update_time_windows(i)
                     m.optimize()
                     counter += 1
-                else:
-                    self.updater.remove_rejected_request(i)
+                if s[i].x == 1 and counter >= R:
+                    self.updater.remove_rejected_request()
 
             for v in m.getVars():
                 if v.x > 0:

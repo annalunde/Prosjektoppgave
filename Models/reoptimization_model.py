@@ -14,7 +14,7 @@ class ReoptModel:
         self.route_plan = current_route_plan
         self.event = event
         self.num_requests = num_requests
-        self.udpater = Updater(self.route_plan, self.event,self.num_requests)
+        self.updater = Updater(self.route_plan, self.event,self.num_requests)
 
     def vizualize_route(self, results):
         dot = graphviz.Digraph(engine="neato")
@@ -129,6 +129,17 @@ class ReoptModel:
                 + quicksum(C_F * d[i] for i in pickups),
                 GRB.MINIMIZE,
             )
+
+            m.setObjectiveN(
+                quicksum(
+                    C_D[k] * D_ij[i][j] * x[i, j, k]
+                    for i in nodes_depots
+                    for j in nodes_depots
+                    for k in vehicles
+                ), index=0, weight=0.5)
+
+            m.setObjectiveN(quicksum(C_T * (l[i] + u[i]) for i in nodes)
+                + quicksum(C_F * d[i] for i in pickups))
 
             # FLOW CONSTRAINTS
             m.addConstrs(
@@ -454,6 +465,10 @@ class ReoptModel:
                 )
 
             print("Obj: %g" % m.objVal)
+
+
+                
+            
             self.vizualize_route(results=m.getVars())
 
 
@@ -464,6 +479,9 @@ class ReoptModel:
             route_plan["q_W"] = {k: v.X for k, v in q_W.items()}
 
             return route_plan
+        
+            
+                
 
         except GurobiError as e:
             print("Error reported")

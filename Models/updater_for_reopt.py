@@ -154,7 +154,6 @@ class Updater:
 
         return P_R, P_N, P, N_R, N_N, N, E_S, E_W, T_O
 
-
 def main():
     updater = None
 

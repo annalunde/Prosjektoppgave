@@ -37,9 +37,9 @@ class Updater:
         self.num_nodes_and_depots = 2 * num_vehicles + 2 * n
 
         # CREATE NEW SETS
-        pickups_new.append(self.num_requests)
-        nodes_new.append(self.num_requests)
-        nodes_new.append(2 * self.num_requests)
+        pickups_new.append(self.num_requests - 1)
+        nodes_new.append(self.num_requests - 1)
+        nodes_new.append(2 * (self.num_requests - 1))
 
         # CREATE ALL SETS
         pickups = [i for i in range(self.num_requests)]
@@ -73,18 +73,23 @@ class Updater:
         )
 
         for t_i in self.route_plan["t"].keys():
-            T_O.append(pd.to_datetime(self.route_plan["t"][t_i]))
+            T_O.append(self.route_plan["t"][t_i])
+            print(pd.to_datetime(self.route_plan["t"][t_i], unit="s"))
             if (
-                pd.to_datetime(self.route_plan["t"][t_i]) < time_request_U
-                and pd.to_datetime(self.route_plan["t"][t_i]) > time_request_L
+                pd.to_datetime(self.route_plan["t"][t_i], unit="s") < time_request_U
+                and pd.to_datetime(self.route_plan["t"][t_i], unit="s") > time_request_L
             ):
-                if t_i[0] <= self.num_requests - 1:
-                    pickups_remaining.append(t_i[0])
-                    nodes_remaining.append(t_i[0])
-                    vehicle_times[t_i] = pd.to_datetime(self.route_plan["t"][t_i])
+                if t_i <= self.num_requests - 1:
+                    pickups_remaining.append(t_i)
+                    nodes_remaining.append(t_i)
+                    vehicle_times[t_i] = pd.to_datetime(
+                        self.route_plan["t"][t_i], unit="s"
+                    )
                 else:
-                    nodes_remaining.append(t_i[0])
-                    vehicle_times[t_i] = pd.to_datetime(self.route_plan["t"][t_i])
+                    nodes_remaining.append(t_i)
+                    vehicle_times[t_i] = pd.to_datetime(
+                        self.route_plan["t"][t_i], unit="s"
+                    )
 
         for k in vehicles:
             for i in pickups_remaining:

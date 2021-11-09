@@ -70,7 +70,6 @@ class Updater:
         )
 
         for t_i in self.route_plan["t"].keys():
-            # T_O.append(self.route_plan["t"][t_i]) #NOTE if for all pickup nodes
             if (
                 pd.to_datetime(self.route_plan["t"][t_i]) < time_request_U
                 and pd.to_datetime(self.route_plan["t"][t_i]) > time_request_L
@@ -81,7 +80,7 @@ class Updater:
                         pd.to_datetime(self.route_plan["t"][t_i])
                     )  # NOTE if only pickup nodes that are open
                     nodes_remaining.append(t_i[0])
-                    nodes_remaining.append(t_i[0] + self.num_requests)
+                    nodes_remaining.append(t_i[0 + self.num_requests])
                 else:
                     nodes_remaining.append(t_i[0])
 

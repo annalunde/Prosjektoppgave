@@ -27,11 +27,14 @@ class Updater:
         E_S = []  # standard seats load of vehicle k when event occurs
         E_W = []  # wheelchair load of vehickle k when event occurs
         T_O = []  # time of service of request i in original plan
+        vehicle_times = (
+            {}
+        )  # dictionary used to find start and end point of each vehicle within opened time frame
 
         # Sets
         n = self.num_requests  # number of pickup nodes
-        num_nodes = 2 * n
-        num_nodes_and_depots = 2 * num_vehicles + 2 * n
+        self.num_nodes = 2 * n
+        self.num_nodes_and_depots = 2 * num_vehicles + 2 * n
 
         # CREATE NEW SETS
         pickups_new.append(self.num_requests)
@@ -70,19 +73,18 @@ class Updater:
         )
 
         for t_i in self.route_plan["t"].keys():
+            T_O.append(pd.to_datetime(self.route_plan["t"][t_i]))
             if (
                 pd.to_datetime(self.route_plan["t"][t_i]) < time_request_U
                 and pd.to_datetime(self.route_plan["t"][t_i]) > time_request_L
             ):
                 if t_i[0] <= self.num_requests - 1:
                     pickups_remaining.append(t_i[0])
-                    T_O.append(
-                        pd.to_datetime(self.route_plan["t"][t_i])
-                    )  # NOTE if only pickup nodes that are open
                     nodes_remaining.append(t_i[0])
-                    nodes_remaining.append(t_i[0 + self.num_requests])
+                    vehicle_times[t_i] = pd.to_datetime(self.route_plan["t"][t_i])
                 else:
                     nodes_remaining.append(t_i[0])
+                    vehicle_times[t_i] = pd.to_datetime(self.route_plan["t"][t_i])
 
         for k in vehicles:
             for i in pickups_remaining:
@@ -116,18 +118,82 @@ class Updater:
         vehicle_lat_lon_deg = []
 
         # Origins for each vehicle
-        for i in range(num_vehicles):
-            vehicle_lat_lon.append(
-                (radians(59.946829115276145), radians(10.779841653639243))
+        origins = {}
+        for t in vehicle_times.keys():
+            v = next(
+                a[2]
+                for a in self.route_plan["x"].keys()
+                if a[1] == t and self.route_plan["x"][a] == 1
             )
-            vehicle_lat_lon_deg.append((59.946829115276145, 10.779841653639243))
+            if v not in origins.keys():
+                origins[v] = (vehicle_times[t], t)
+            else:
+                if vehicle_times[t] < origins[v][0]:
+                    origins[v] = (vehicle_times[t], t)
+        for k in vehicles:
+            # A vehicle might not be used
+            if k not in origins.keys():
+                origins[k] = ()
+
+        for item in sorted(origins.items()):
+            if len(item[1]) == 0:
+                vehicle_lat_lon.append(
+                    (radians(59.946829115276145), radians(10.779841653639243))
+                )
+
+            else:
+                if item[1][1] < self.num_requests - 1:
+                    vehicle_lat_lon.append(
+                        list(zip(df.loc[t, "Origin Lat"], df.loc[t, "Origin Lng"]))
+                    )
+                else:
+                    vehicle_lat_lon.append(
+                        list(
+                            zip(
+                                df.loc[t - self.num_requests - 1, "Destination Lat"],
+                                df.loc[t - self.num_requests - 1, "Destination Lng"],
+                            )
+                        )
+                    )
 
         # Destinations for each vehicle
-        for i in range(num_vehicles):
-            vehicle_lat_lon.append(
-                (radians(59.946829115276145), radians(10.779841653639243))
+        destinations = {}
+        for t in vehicle_times.keys():
+            v = next(
+                a[2]
+                for a in self.route_plan["x"].keys()
+                if a[1] == t and self.route_plan["x"][a] == 1
             )
-            vehicle_lat_lon_deg.append((59.946829115276145, 10.779841653639243))
+            if v not in destinations.keys():
+                destinations[v] = (vehicle_times[t], t)
+            else:
+                if vehicle_times[t] > destinations[v][0]:
+                    destinations[v] = (vehicle_times[t], t)
+        for k in vehicles:
+            # A vehicle might not be used
+            if k not in destinations.keys():
+                destinations[k] = ()
+
+        for item in sorted(destinations.items()):
+            if len(item[1]) == 0:
+                vehicle_lat_lon.append(
+                    (radians(59.946829115276145), radians(10.779841653639243))
+                )
+
+            else:
+                if item[1][1] < self.num_requests - 1:
+                    vehicle_lat_lon.append(
+                        list(zip(df.loc[t, "Origin Lat"], df.loc[t, "Origin Lng"]))
+                    )
+                else:
+                    vehicle_lat_lon.append(
+                        list(
+                            zip(
+                                df.loc[t - self.num_requests - 1, "Destination Lat"],
+                                df.loc[t - self.num_requests - 1, "Destination Lng"],
+                            )
+                        )
+                    )
 
         # Positions
         lat_lon = request_lat_lon + vehicle_lat_lon
@@ -140,11 +206,12 @@ class Updater:
         speed = 40
 
         T_ij = np.empty(
-            shape=(num_nodes_and_depots, num_nodes_and_depots), dtype=timedelta
+            shape=(self.num_nodes_and_depots, self.num_nodes_and_depots),
+            dtype=timedelta,
         )
 
-        for i in range(num_nodes_and_depots):
-            for j in range(num_nodes_and_depots):
+        for i in range(self.num_nodes_and_depots):
+            for j in range(self.num_nodes_and_depots):
                 T_ij[i][j] = timedelta(hours=(D_ij[i][j] / speed))
 
         # Time windows
@@ -166,12 +233,29 @@ class Updater:
         )
 
         # Big M
-        M_ij = np.empty(shape=(num_nodes, num_nodes), dtype=datetime)
-        for i in range(num_nodes):
-            for j in range(num_nodes):
+        M_ij = np.empty(shape=(self.num_nodes, self.num_nodes), dtype=datetime)
+        for i in range(self.num_nodes):
+            for j in range(self.num_nodes):
                 M_ij[i][j] = T_H_U[i] + T_ij[i][j] - T_H_L[j]
 
-        # return pickups_remaining, pickups_new, pickups, nodes_remaining, nodes_new, nodes, E_S, E_W, T_O
+        return (
+            pickups_remaining,
+            pickups_new,
+            pickups,
+            nodes_remaining,
+            nodes_new,
+            nodes,
+            E_S,
+            E_W,
+            T_O,
+            D_ij,
+            T_ij,
+            T_S_L,
+            T_S_U,
+            T_H_L,
+            T_H_U,
+            M_ij,
+        )
 
 
 def main():

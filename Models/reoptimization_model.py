@@ -91,7 +91,24 @@ class ReoptModel:
 
     def run_model(self):
         # update sets with new request
-        self.updater.update()
+        (
+            pickups_remaining,
+            pickups_new,
+            pickups,
+            nodes_remaining,
+            nodes_new,
+            nodes,
+            E_S,
+            E_W,
+            T_O,
+            D_ij,
+            T_ij,
+            T_S_L,
+            T_S_U,
+            T_H_L,
+            T_H_U,
+            M_ij,
+        ) = self.updater.update()
 
         try:
             m = gp.Model("mip1")

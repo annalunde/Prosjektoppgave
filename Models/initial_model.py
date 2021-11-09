@@ -431,6 +431,8 @@ class InitialModel:
             route_plan["q_S"] = {k: v.X for k, v in q_S.items()}
             route_plan["q_W"] = {k: v.X for k, v in q_W.items()}
 
+            print(route_plan)
+
             return route_plan
 
         except GurobiError as e:

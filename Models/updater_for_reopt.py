@@ -24,8 +24,12 @@ class Updater:
         nodes_remaining = []  # set of remaining pick-up and drop-off nodes
         nodes_new = []  # set of new pick-up and drop-off nodes
         nodes = []  # set of all pick-up and drop-off nodes
-        E_S = []  # standard seats load of vehicle k when event occurs
-        E_W = []  # wheelchair load of vehickle k when event occurs
+        E_S = (
+            []
+        )  # standard seats load of vehicle k in lower time window of rolling horizon
+        E_W = (
+            []
+        )  # wheelchair load of vehickle k in lower time window of rolling horizon
         T_O = []  # time of service of request i in original plan
         vehicle_times = (
             {}
@@ -49,12 +53,12 @@ class Updater:
         # FETCH DATA
         if self.first:
             df = pd.read_csv(config("data_path_test"), nrows=self.num_requests - 1)
-            df = df.append(self.event)
+            df = df.append(self.event, ignore_index=True)
             df.to_csv(f"data_requests_for:{self.num_requests}")
 
         else:
             df = pd.read_csv(f"data_requests_for:{self.num_requests-1}")
-            df = df.append(self.event)
+            df = df.append(self.event, ignore_index=True)
             df.to_csv(f"data_requests_for:{self.num_requests}")
 
         # CREATE REMAINING SETS
@@ -74,7 +78,6 @@ class Updater:
 
         for t_i in self.route_plan["t"].keys():
             T_O.append(self.route_plan["t"][t_i])
-            print(pd.to_datetime(self.route_plan["t"][t_i], unit="s"))
             if (
                 pd.to_datetime(self.route_plan["t"][t_i], unit="s") < time_request_U
                 and pd.to_datetime(self.route_plan["t"][t_i], unit="s") > time_request_L
@@ -90,11 +93,6 @@ class Updater:
                     vehicle_times[t_i] = pd.to_datetime(
                         self.route_plan["t"][t_i], unit="s"
                     )
-
-        for k in vehicles:
-            for i in pickups_remaining:
-                E_S.append(self.route_plan["q_S"][i, k])
-                E_W.append(self.route_plan["q_W"][i, k])
 
         # Load for each request
         L_S = df["Number of Passengers"].tolist()
@@ -112,15 +110,7 @@ class Updater:
         )
         request_lat_lon = origin_lat_lon + destination_lat_lon
 
-        # Positions in degrees
-        origin_lat_lon_deg = list(zip(df["Origin Lat"], df["Origin Lng"]))
-        destination_lat_lon_deg = list(
-            zip(df["Destination Lat"], df["Destination Lng"])
-        )
-        request_lat_lon_deg = origin_lat_lon_deg + destination_lat_lon_deg
-
         vehicle_lat_lon = []
-        vehicle_lat_lon_deg = []
 
         # Origins for each vehicle
         origins = {}
@@ -147,19 +137,45 @@ class Updater:
                 )
 
             else:
-                if item[1][1] < self.num_requests - 1:
+                if item[1][1] <= self.num_requests - 1:
+                    print("The vehicle is", item[0])
+                    print(df.loc[0, "Origin Lat"])
+                    print(np.deg2rad(df.loc[0, "Origin Lat"]))
+                    print(np.deg2rad(df.loc[item[1][1], "Origin Lat"]))
                     vehicle_lat_lon.append(
-                        list(zip(df.loc[t, "Origin Lat"], df.loc[t, "Origin Lng"]))
+                        (
+                            np.deg2rad(df.loc[item[1][1], "Origin Lat"]),
+                            np.deg2rad(df.loc[item[1][1], "Origin Lng"]),
+                        )
                     )
                 else:
                     vehicle_lat_lon.append(
-                        list(
-                            zip(
-                                df.loc[t - self.num_requests - 1, "Destination Lat"],
-                                df.loc[t - self.num_requests - 1, "Destination Lng"],
-                            )
+                        (
+                            np.deg2rad(
+                                df.loc[
+                                    (item[1][1] - self.num_requests - 1),
+                                    "Destination Lat",
+                                ]
+                            ),
+                            np.deg2rad(
+                                df.loc[
+                                    (item[1][1] - self.num_requests - 1),
+                                    "Destination Lng",
+                                ]
+                            ),
                         )
                     )
+
+        # Loads of each vehicle
+        for k in sorted(origins.keys()):
+            if (
+                len(origins[k]) == 0
+            ):  # the vehicle is not used and get default value of load
+                E_S.append(0)
+                E_W.append(0)
+            else:
+                E_S.append(self.route_plan["q_S"][origins[k][1], k])
+                E_W.append(self.route_plan["q_W"][origins[k][1], k])
 
         # Destinations for each vehicle
         destinations = {}
@@ -186,27 +202,37 @@ class Updater:
                 )
 
             else:
-                if item[1][1] < self.num_requests - 1:
+                if item[1][1] <= self.num_requests - 1:
                     vehicle_lat_lon.append(
-                        list(zip(df.loc[t, "Origin Lat"], df.loc[t, "Origin Lng"]))
+                        (
+                            np.deg2rad(df.loc[item[1][1], "Origin Lat"]),
+                            np.deg2rad(df.loc[item[1][1], "Origin Lng"]),
+                        )
                     )
                 else:
                     vehicle_lat_lon.append(
-                        list(
-                            zip(
-                                df.loc[t - self.num_requests - 1, "Destination Lat"],
-                                df.loc[t - self.num_requests - 1, "Destination Lng"],
-                            )
+                        (
+                            np.deg2rad(
+                                df.loc[
+                                    item[1][1] - self.num_requests - 1,
+                                    "Destination Lat",
+                                ]
+                            ),
+                            np.deg2rad(
+                                df.loc[
+                                    item[1][1] - self.num_requests - 1,
+                                    "Destination Lng",
+                                ]
+                            ),
                         )
                     )
 
         # Positions
         lat_lon = request_lat_lon + vehicle_lat_lon
-        Position = request_lat_lon_deg + vehicle_lat_lon_deg
 
         # Distance matrix
         D_ij = haversine_distances(lat_lon, lat_lon) * 6371
-
+        print(D_ij)
         # Travel time matrix
         speed = 40
 
@@ -261,17 +287,3 @@ class Updater:
             T_H_U,
             M_ij,
         )
-
-
-def main():
-    updater = None
-
-    try:
-        updater = Updater()
-
-    except Exception as e:
-        print("ERROR:", e)
-
-
-if __name__ == "__main__":
-    main()

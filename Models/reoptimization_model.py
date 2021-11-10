@@ -100,6 +100,7 @@ class ReoptModel:
             nodes_new,
             nodes,
             fixate_x,
+            fixate_t,
             E_S,
             E_W,
             T_O,
@@ -156,11 +157,14 @@ class ReoptModel:
             # FIXATING VALUES
 
             # x values - outside time window
-            for x in fixate_x:
-                x[x[0], x[1], x[2]].lb = 1
-                x[x[0], x[1], x[2]].ub = 1
+            for f_x in fixate_x:
+                x[f_x[0], f_x[1], f_x[2]].lb = 1
+                x[f_x[0], f_x[1], f_x[2]].ub = 1
 
             # t values - historic values
+            for f_t in fixate_t:
+                t[f_t].lb = fixate_t[f_t]
+                t[f_t].ub = fixate_t[f_t]
 
             # FLOW CONSTRAINTS
             m.addConstrs(

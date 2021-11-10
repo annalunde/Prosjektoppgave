@@ -19,7 +19,7 @@ class Updater:
 
     def update(self):
         pickups_remaining = []  # set of remaining pick-up nodes
-        pickups_new = []  # set of new pick-up nodes
+        pickups_new = []  # set of new pick-up nodess
         pickups = []  # set of all pick-up nodes
         nodes_remaining = []  # set of remaining pick-up and drop-off nodes
         nodes_new = []  # set of new pick-up and drop-off nodes
@@ -54,12 +54,12 @@ class Updater:
         if self.first:
             df = pd.read_csv(config("data_path_test"), nrows=self.num_requests - 1)
             df = df.append(self.event, ignore_index=True)
-            df.to_csv(f"data_requests_for:{self.num_requests}")
+            df.to_csv(f"data_requests_for:{self.num_requests}.csv")
 
         else:
-            df = pd.read_csv(f"data_requests_for:{self.num_requests-1}")
+            df = pd.read_csv(f"data_requests_for:{self.num_requests-1}.csv")
             df = df.append(self.event, ignore_index=True)
-            df.to_csv(f"data_requests_for:{self.num_requests}")
+            df.to_csv(f"data_requests_for:{self.num_requests}.csv")
 
         # CREATE REMAINING SETS
         time_now = pd.to_datetime(self.event["Request Creation Time"])
@@ -281,4 +281,6 @@ class Updater:
             T_H_L,
             T_H_U,
             M_ij,
+            L_S,
+            L_W,
         )

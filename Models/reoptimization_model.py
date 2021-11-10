@@ -108,6 +108,8 @@ class ReoptModel:
             T_H_L,
             T_H_U,
             M_ij,
+            L_S,
+            L_W,
         ) = self.updater.update()
 
         try:
@@ -129,7 +131,7 @@ class ReoptModel:
             l = m.addVars(nodes, name="l")
             u = m.addVars(nodes, name="u")
             d = m.addVars(pickups, name="d")
-            s = m.addVars(nodes, vtype=GRB.BINARY, name="s")
+            s = m.addVars(pickups_new, vtype=GRB.BINARY, name="s")
             z_plus = m.addVars(nodes_remaining, name="z+")
             z_minus = m.addVars(nodes_remaining, name="z-")
             y = m.addVars(vehicles, vtype=GRB.BINARY, name="y")
@@ -145,7 +147,7 @@ class ReoptModel:
                 + quicksum(C_T * (l[i] + u[i]) for i in nodes)
                 + quicksum(C_F * d[i] for i in pickups)
                 + quicksum(C_R * s[i] for i in pickups_new)
-                + quicksum(C_K * y[k] for k in vehicles)
+                + quicksum(C_K[k] * y[k] for k in vehicles)
                 + quicksum(C_O * (z_plus[i] - z_minus[i]) for i in nodes_remaining),
                 GRB.MINIMIZE,
             )
@@ -166,7 +168,10 @@ class ReoptModel:
 
             m.addConstrs(
                 (
-                    quicksum(x[nodes_depots[2 * n + k], j, k] for j in nodes_depots)
+                    quicksum(
+                        x[nodes_depots[2 * self.num_requests + k], j, k]
+                        for j in nodes_depots
+                    )
                     == 1
                     for k in vehicles
                 ),
@@ -176,7 +181,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     quicksum(
-                        x[i, nodes_depots[2 * n + k + num_vehicles], k]
+                        x[i, nodes_depots[2 * self.num_requests + k + num_vehicles], k]
                         for i in nodes_depots
                     )
                     == 1
@@ -246,7 +251,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     quicksum(x[i, j, k] for j in nodes_depots)
-                    - quicksum(x[n + i, j, k] for j in nodes_depots)
+                    - quicksum(x[self.num_requests + i, j, k] for j in nodes_depots)
                     == 0
                     for i in pickups
                     for k in vehicles
@@ -268,7 +273,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     q_S[nodes_depots[2 * self.num_requests + k], k]
-                    == L_S[k] - E_K_S[nodes_depots[2 * self.num_requests + k]]
+                    == L_S[k] - E_S[nodes_depots[2 * self.num_requests + k]]
                     for k in vehicles
                 ),
                 name="SCapacity1",
@@ -341,7 +346,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     q_W[nodes_depots[2 * self.num_requests + k], k]
-                    == L_W[k] - E_K_W[nodes_depots[2 * self.num_requests + k]]
+                    == L_W[k] - E_W[nodes_depots[2 * self.num_requests + k]]
                     for k in vehicles
                 ),
                 name="WCapacity1",

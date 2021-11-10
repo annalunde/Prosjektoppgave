@@ -138,10 +138,6 @@ class Updater:
 
             else:
                 if item[1][1] <= self.num_requests - 1:
-                    print("The vehicle is", item[0])
-                    print(df.loc[0, "Origin Lat"])
-                    print(np.deg2rad(df.loc[0, "Origin Lat"]))
-                    print(np.deg2rad(df.loc[item[1][1], "Origin Lat"]))
                     vehicle_lat_lon.append(
                         (
                             np.deg2rad(df.loc[item[1][1], "Origin Lat"]),
@@ -232,7 +228,6 @@ class Updater:
 
         # Distance matrix
         D_ij = haversine_distances(lat_lon, lat_lon) * 6371
-        print(D_ij)
         # Travel time matrix
         speed = 40
 

@@ -10,6 +10,10 @@ from gurobipy import *
 class Model:
     def _init_(self):
         model = "MIP 1"
+        self.n = n
+
+    def get_n(self):
+        return self.n
 
     def vizualize_route(self, results):
         dot = graphviz.Digraph(engine="neato")
@@ -94,7 +98,6 @@ class Model:
             x = m.addVars(
                 nodes_depots, nodes_depots, vehicles, vtype=GRB.BINARY, name="x"
             )
-            w = m.addVars(pickups, vtype=GRB.BINARY, name="w")
             q_S = m.addVars(nodes_depots, vehicles, vtype=GRB.INTEGER, name="q_S")
             q_W = m.addVars(nodes_depots, vehicles, vtype=GRB.INTEGER, name="q_W")
             t = m.addVars(nodes, name="t")
@@ -104,16 +107,15 @@ class Model:
 
             # OBJECTIVE FUNCTION
 
-            m.setObjectiveN(quicksum(
+            m.setObjectiveN(0.1*quicksum(
                     C_D[k] * D_ij[i][j] * x[i, j, k]
                     for i in nodes_depots
                     for j in nodes_depots
                     for k in vehicles
-                ), index=0, weight=0.5)
+                ), index=0)
 
-            m.setObjectiveN(
-                quicksum(C_T * (l[i] + u[i]) for i in nodes)
-                + quicksum(C_F * d[i] for i in pickups), index=1, weight=0.5)
+            m.setObjectiveN(0.9*quicksum(C_T * (l[i] + u[i]) for i in nodes)
+                 + 0.9*quicksum(C_F * d[i] for i in pickups), index=1)
 
             m.ModelSense = GRB.MINIMIZE
 
@@ -129,8 +131,8 @@ class Model:
                 + quicksum(C_F * d[i] for i in pickups),
                 GRB.MINIMIZE,
             )
-
             """
+
             # FLOW CONSTRAINTS
             m.addConstrs(
                 (
@@ -275,7 +277,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    quicksum(L_S[i] * x[i, j, k] for j in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]])) <= q_S[i, k]
+                    quicksum(L_S[i] * x[i, j, k] for j in nodes_depots) <= q_S[i, k]
                     for i in pickups
                     for k in vehicles
                 ),
@@ -284,7 +286,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    q_S[i, k] <= quicksum(Q_S[k] * x[i, j, k] for j in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]]))
+                    q_S[i, k] <= quicksum(Q_S[k] * x[i, j, k] for j in  nodes_depots)
                     for i in pickups
                     for k in vehicles
                 ),
@@ -293,7 +295,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    quicksum((Q_S[k] - L_S[i]) * x[n + i, j, k] for j in (nodes + [nodes_depots[2 * n + k]] + [nodes_depots[2 * n + k + num_vehicles]]))
+                    quicksum((Q_S[k] - L_S[i]) * x[n + i, j, k] for j in nodes_depots)
                     >= q_S[n + i, k]
                     for i in pickups
                     for k in vehicles
@@ -442,7 +444,7 @@ class Model:
             )
 
             # RUN MODEL
-            m.setParam(GRB.Param.NumericFocus, 2)
+            #m.setParam(GRB.Param.NumericFocus, 1.5)
             m.optimize()
 
             """
@@ -476,6 +478,7 @@ class Model:
                 for k in vehicles:
                     print(q_W[i, k].varName, q_W[i, k].x)
 
+
             obj1 = m.getObjective(index=0)
             print("Operational costs")
             print(obj1.getValue())
@@ -487,8 +490,8 @@ class Model:
             print("Total")
             print(obj3)
 
-            self.vizualize_route(results=m.getVars())
 
+            self.vizualize_route(results=m.getVars())
 
         except GurobiError as e:
             print("Error reported")

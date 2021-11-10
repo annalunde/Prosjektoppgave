@@ -95,9 +95,11 @@ class ReoptModel:
             pickups_remaining,
             pickups_new,
             pickups,
+            nodes_depots,
             nodes_remaining,
             nodes_new,
             nodes,
+            fixate_x,
             E_S,
             E_W,
             T_O,
@@ -118,7 +120,6 @@ class ReoptModel:
             pickups = [i for i in range(self.num_requests)]
             dropoffs = [i for i in range(self.num_requests, 2 * self.num_requests)]
             nodes = [i for i in range(2 * self.num_requests)]
-            nodes_depots = [i for i in range(self.updater.num_nodes_and_depots)]
             vehicles = [i for i in range(num_vehicles)]
 
             # Create variables
@@ -151,6 +152,15 @@ class ReoptModel:
                 + quicksum(C_O * (z_plus[i] - z_minus[i]) for i in nodes_remaining),
                 GRB.MINIMIZE,
             )
+
+            # FIXATING VALUES
+
+            # x values - outside time window
+            for x in fixate_x:
+                x[x[0], x[1], x[2]].lb = 1
+                x[x[0], x[1], x[2]].ub = 1
+
+            # t values - historic values
 
             # FLOW CONSTRAINTS
             m.addConstrs(

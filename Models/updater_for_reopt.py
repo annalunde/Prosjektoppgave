@@ -34,6 +34,8 @@ class Updater:
         vehicle_times = (
             {}
         )  # dictionary used to find start and end point of each vehicle within opened time frame
+        fixate_x = []   # a list of all x_ijk variables that must be set to one
+        fixate_t = {}   # a dict of all t variables that must be fixed to its value
 
         # Sets
         n = self.num_requests  # number of pickup nodes
@@ -49,6 +51,7 @@ class Updater:
         pickups = [i for i in range(self.num_requests)]
         nodes = [i for i in range(2 * self.num_requests)]
         vehicles = [i for i in range(num_vehicles)]
+        nodes_depots = [i for i in range(self.num_nodes_and_depots)]
 
         # FETCH DATA
         if self.first:
@@ -93,6 +96,7 @@ class Updater:
                     vehicle_times[t_i] = pd.to_datetime(
                         self.route_plan["t"][t_i], unit="s"
                     )
+
 
         # Load for each request
         L_S = df["Number of Passengers"].tolist()
@@ -223,6 +227,38 @@ class Updater:
                         )
                     )
 
+        # Find x-variables to fixate
+        for x in nodes_depots - nodes_remaining:
+            fixate_x.append(
+                next(
+                    a
+                    for a in self.route_plan["x"].keys()
+                    if a[0] == x or a[1] == x  and self.route_plan["x"][a] == 1
+                )
+            )
+        # need to add origins and destinations for vehicles within time window
+        for t in origins.keys():
+            fixate_x.append(next(
+                    a
+                    for a in self.route_plan["x"].keys()
+                    if a[2] == t and a[1] == origins[t][1]  and self.route_plan["x"][a] == 1
+                ))
+         for t in destinations.keys():
+            fixate_x.append(next(
+                    a
+                    for a in self.route_plan["x"].keys()
+                    if a[2] == t and a[0] == destinations[t][1]  and self.route_plan["x"][a] == 1
+                ))     
+         # need to remove x-variables for vehicles not initially used
+         not_used_vehicles = [k for k in origins.keys() if len(origins[k])==0] 
+         fixate_x = filter(lambda x: x[0] in not_used_vehicles or x[1] in not_used_vehicles,fixate_x)
+
+        # Find t-variables to fixate
+        for t_i in self.route_plan["t"].keys():
+            if pd.to_datetime(self.route_plan["t"][t_i], unit="s") <= time_request_L:
+                fixate_t[t_i] = self.route_plan["t"][t_i]
+                
+
         # Positions
         lat_lon = request_lat_lon + vehicle_lat_lon
 
@@ -268,9 +304,11 @@ class Updater:
             pickups_remaining,
             pickups_new,
             pickups,
+            nodes_depots,
             nodes_remaining,
             nodes_new,
             nodes,
+            fixate_x,
             E_S,
             E_W,
             T_O,
@@ -283,4 +321,5 @@ class Updater:
             M_ij,
             L_S,
             L_W,
+            
         )

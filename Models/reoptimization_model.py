@@ -3,8 +3,8 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
-from models.reoptimization_config import *
-from models.updater_for_reopt import *
+from Models.reoptimization_config import *
+from Models.updater_for_reopt import *
 
 # from models.updater_for_reopt import Updater
 
@@ -472,6 +472,17 @@ class ReoptModel:
             # RUN MODEL
             m.optimize()
 
+            # RERUN MODEL IF REQUEST IS REJECTED
+
+            for i in pickups_new:
+                counter = 0
+                while s[i].x == 1 and counter < R:
+                    self.updater.update_time_windows(i)
+                    m.optimize()
+                    counter += 1
+                if s[i].x == 1 and counter >= R:
+                    self.updater.remove_rejected_request()
+
             for v in m.getVars():
                 if v.x > 0:
                     print("%s %g" % (v.varName, v.x))
@@ -483,10 +494,6 @@ class ReoptModel:
                 )
 
             print("Obj: %g" % m.objVal)
-
-            if s > 0.1:
-                print("Your request has been rejected:/")
-                exit
 
             self.vizualize_route(results=m.getVars())
 

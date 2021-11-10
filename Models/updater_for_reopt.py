@@ -6,7 +6,7 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 from math import radians, degrees
-from models.reoptimization_config import *
+from Models.reoptimization_config import *
 from sklearn.metrics.pairwise import haversine_distances
 
 
@@ -171,7 +171,18 @@ class Updater:
             for j in range(num_nodes):
                 M_ij[i][j] = T_H_U[i] + T_ij[i][j] - T_H_L[j]
 
-        # return pickups_remaining, pickups_new, pickups, nodes_remaining, nodes_new, nodes, E_S, E_W, T_O
+        return pickups_remaining, pickups_new, pickups, nodes_remaining, nodes_new, nodes, E_S, E_W, T_O
+
+    def update_time_windows(self, i):
+        T_S_L[i] -= timedelta(minutes=5)
+        T_H_L[i] -= timedelta(minutes=5)
+        T_S_U[i] += timedelta(minutes=5)
+        T_H_U[i] += timedelta(minutes=5)
+
+    def remove_rejected_request(self):
+        df = pd.read_csv(f"data_requests_for:{self.num_requests}")
+        df = df.head(-1)
+        df.to_csv(f"data_requests_for:{self.num_requests - 1}")
 
 
 def main():

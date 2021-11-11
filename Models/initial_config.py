@@ -6,7 +6,7 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # Sets
-n = 15  # number of pickup nodes
+n = 20  # number of pickup nodes
 num_vehicles = 3
 num_nodes = 2 * n
 num_nodes_and_depots = 2 * num_vehicles + 2 * n
@@ -17,7 +17,7 @@ C_F = 1/60
 C_T = 1/60
 
 # Capacity per vehicle
-Q_S = [10, 10, 10, 10]
+Q_S = [5, 5, 5, 5]
 Q_W = [1, 1, 1, 1]
 
 # Allowed excess ride time
@@ -70,6 +70,9 @@ T_ij = np.empty(shape=(num_nodes_and_depots, num_nodes_and_depots), dtype=timede
 for i in range(num_nodes_and_depots):
     for j in range(num_nodes_and_depots):
         T_ij[i][j] = timedelta(hours=(D_ij[i][j] / speed))
+
+# Service time
+S = timedelta(minutes=2).total_seconds()
 
 # Time windows
 T_S_L = pd.to_datetime(df["T_S_L_P"]).tolist() + pd.to_datetime(df["T_S_L_D"]).tolist()

@@ -107,15 +107,15 @@ class Model:
 
             # OBJECTIVE FUNCTION
 
-            m.setObjectiveN(0.1*quicksum(
+            m.setObjectiveN(0.2*quicksum(
                     C_D[k] * D_ij[i][j] * x[i, j, k]
                     for i in nodes_depots
                     for j in nodes_depots
                     for k in vehicles
                 ), index=0)
 
-            m.setObjectiveN(0.9*quicksum(C_T * (l[i] + u[i]) for i in nodes)
-                 + 0.9*quicksum(C_F * d[i] for i in pickups), index=1)
+            m.setObjectiveN(0.8*quicksum(C_T * (l[i] + u[i]) for i in nodes)
+                 + 0.8*quicksum(C_F * d[i] for i in pickups), index=1)
 
             m.ModelSense = GRB.MINIMIZE
 
@@ -400,7 +400,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    t[i] + T_ij[i][j].total_seconds() - t[j]
+                    t[i] + S + T_ij[i][j].total_seconds() - t[j]
                     <= M_ij[i][j].total_seconds() * (1 - x[i, j, k])
                     for i in nodes
                     for j in nodes
@@ -411,7 +411,7 @@ class Model:
 
             m.addConstrs(
                 (
-                    t[i] + T_ij[i][n + i].total_seconds() - t[n + i] <= 0
+                    t[i] + S + T_ij[i][n + i].total_seconds() - t[n + i] <= 0
                     for i in pickups
                 ),
                 name="TimeWindow4",

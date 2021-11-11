@@ -16,7 +16,7 @@ class ReoptModel:
         self.num_requests = num_requests
         self.updater = Updater(self.route_plan, self.event, self.num_requests, first)
 
-    def vizualize_route(self, results):
+    def vizualize_route(self, results, num_nodes_and_depots):
         dot = graphviz.Digraph(engine="neato")
 
         colors = [
@@ -254,6 +254,7 @@ class ReoptModel:
             )
 
             # vehicles cannot drive into destinations that are not their own
+            # NOTE
             m.addConstrs(
                 (
                     quicksum(
@@ -266,6 +267,35 @@ class ReoptModel:
                     for v in vehicles
                 ),
                 name="Flow5.2",
+            )
+            # vehicles cannot drive into destinations that are not their own
+            m.addConstrs(
+                (
+                    quicksum(
+                        x[i, 2 * self.num_requests + v + num_vehicles, k]
+                        for i in nodes_depots
+                        for k in vehicles
+                        if k != v
+                    )
+                    == 0
+                    for v in vehicles
+                ),
+                name="Flow5.3",
+            )
+            # vehicles cannot drive from origins that are not their own
+            # NOTE
+            m.addConstrs(
+                (
+                    quicksum(
+                        x[2 * self.num_requests + v, j, k]
+                        for j in nodes_depots
+                        for k in vehicles
+                        if k != v
+                    )
+                    == 0
+                    for v in vehicles
+                ),
+                name="Flow5.4",
             )
 
             m.addConstrs(
@@ -439,6 +469,8 @@ class ReoptModel:
                 name="TimeWindow1.2",
             )
 
+            """
+            NOTE
             m.addConstrs(
                 (T_H_L[i].timestamp() * s[i] <= t[i] for i in nodes),
                 name="TimeWindow2.1",
@@ -446,6 +478,16 @@ class ReoptModel:
 
             m.addConstrs(
                 (t[i] <= T_H_U[i].timestamp() * s[i] for i in nodes),
+                name="TimeWindow2.2",
+            )
+            """
+            m.addConstrs(
+                (T_H_L[i].timestamp() <= t[i] for i in nodes),
+                name="TimeWindow2.1",
+            )
+
+            m.addConstrs(
+                (t[i] <= T_H_U[i].timestamp() for i in nodes),
                 name="TimeWindow2.2",
             )
 
@@ -510,11 +552,12 @@ class ReoptModel:
 
             # RUN MODEL
             m.optimize()
-            m.computeIIS()
-            m.write("model.ilp")
 
             for i in nodes:
                 print(s[i].varName, s[i].x)
+                if s[i].x > 0.1:
+                    print("Your request has been rejected:/")
+                    exit
 
             for v in m.getVars():
                 if v.x > 0:
@@ -528,11 +571,12 @@ class ReoptModel:
 
             print("Obj: %g" % m.objVal)
 
-            if s > 0.1:
-                print("Your request has been rejected:/")
-                exit
-
-            self.vizualize_route(results=m.getVars())
+            """
+            NOTE
+            self.vizualize_route(
+                results=m.getVars(), num_nodes_and_depots=len(nodes_depots)
+            )
+            """
 
             route_plan = dict()
             route_plan["x"] = {k: v.X for k, v in x.items()}

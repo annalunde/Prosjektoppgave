@@ -444,7 +444,7 @@ class Model:
             )
 
             # RUN MODEL
-            #m.setParam(GRB.Param.NumericFocus, 1.5)
+            m.setParam(GRB.Param.NumericFocus, 1.5)
             m.optimize()
 
             """

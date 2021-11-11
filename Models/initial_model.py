@@ -375,7 +375,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    t[i] + T_ij[i][j].total_seconds() - t[j]
+                    t[i] + S + T_ij[i][j].total_seconds() - t[j]
                     <= M_ij[i][j].total_seconds() * (1 - x[i, j, k])
                     for i in nodes
                     for j in nodes
@@ -386,7 +386,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    t[i] + T_ij[i][n + i].total_seconds() - t[n + i] <= 0
+                    t[i] + S + T_ij[i][n + i].total_seconds() - t[n + i] <= 0
                     for i in pickups
                 ),
                 name="TimeWindow4",

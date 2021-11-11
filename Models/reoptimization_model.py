@@ -5,8 +5,7 @@ from gurobipy import quicksum
 import graphviz
 from models.reoptimization_config import *
 from models.updater_for_reopt import *
-
-# from models.updater_for_reopt import Updater
+from models.updater_for_reopt import Updater
 
 
 class ReoptModel:
@@ -101,6 +100,8 @@ class ReoptModel:
             nodes,
             fixate_x,
             fixate_t,
+            origins,
+            destinations,
             E_S,
             E_W,
             T_O,
@@ -117,11 +118,20 @@ class ReoptModel:
 
         try:
             m = gp.Model("mip1")
+            m.setParam("NumericFocus", 2)
 
             pickups = [i for i in range(self.num_requests)]
             dropoffs = [i for i in range(self.num_requests, 2 * self.num_requests)]
             nodes = [i for i in range(2 * self.num_requests)]
             vehicles = [i for i in range(num_vehicles)]
+
+            for v in origins.keys():
+                if len(origins[v]) == 0:
+                    origins[v] = (0, 2 * (self.num_requests) + v)
+
+            for v in destinations.keys():
+                if len(destinations[v]) == 0:
+                    destinations[v] = (0, 2 * (self.num_requests) + v)
 
             # Create variables
             x = m.addVars(
@@ -133,7 +143,7 @@ class ReoptModel:
             l = m.addVars(nodes, name="l")
             u = m.addVars(nodes, name="u")
             d = m.addVars(pickups, name="d")
-            s = m.addVars(pickups_new, vtype=GRB.BINARY, name="s")
+            s = m.addVars(nodes, vtype=GRB.BINARY, name="s")
             z_plus = m.addVars(nodes_remaining, name="z+")
             z_minus = m.addVars(nodes_remaining, name="z-")
             y = m.addVars(vehicles, vtype=GRB.BINARY, name="y")
@@ -148,7 +158,7 @@ class ReoptModel:
                 )
                 + quicksum(C_T * (l[i] + u[i]) for i in nodes)
                 + quicksum(C_F * d[i] for i in pickups)
-                + quicksum(C_R * s[i] for i in pickups_new)
+                + quicksum(C_R * s[i] for i in nodes)
                 + quicksum(C_K[k] * y[k] for k in vehicles)
                 + quicksum(C_O * (z_plus[i] - z_minus[i]) for i in nodes_remaining),
                 GRB.MINIMIZE,
@@ -170,7 +180,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     quicksum(x[i, j, k] for j in nodes_depots for k in vehicles) == 1
-                    for i in pickups_remaining
+                    for i in pickups
                 ),
                 name="Flow1",
             )
@@ -179,13 +189,9 @@ class ReoptModel:
                 (x[i, i, k] == 0 for i in nodes_depots for k in vehicles),
                 name="Flow2",
             )
-
             m.addConstrs(
                 (
-                    quicksum(
-                        x[nodes_depots[2 * self.num_requests + k], j, k]
-                        for j in nodes_depots
-                    )
+                    quicksum(x[2 * self.num_requests + k, j, k] for j in nodes_depots)
                     == 1
                     for k in vehicles
                 ),
@@ -195,7 +201,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     quicksum(
-                        x[i, nodes_depots[2 * self.num_requests + k + num_vehicles], k]
+                        x[i, 2 * self.num_requests + k + num_vehicles, k]
                         for i in nodes_depots
                     )
                     == 1
@@ -208,7 +214,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     quicksum(
-                        x[i, nodes_depots[2 * self.num_requests + v], k]
+                        x[i, 2 * self.num_requests + v, k]
                         for i in nodes_depots
                         for k in vehicles
                     )
@@ -236,7 +242,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     quicksum(
-                        x[nodes_depots[2 * self.num_requests + v], j, k]
+                        x[origins[v][1], j, k]
                         for j in nodes_depots
                         for k in vehicles
                         if k != v
@@ -251,7 +257,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     quicksum(
-                        x[i, nodes_depots[2 * self.num_requests + v + num_vehicles], k]
+                        x[i, destinations[v][1], k]
                         for i in nodes_depots
                         for k in vehicles
                         if k != v
@@ -272,6 +278,7 @@ class ReoptModel:
                 ),
                 name="Flow6",
             )
+
             m.addConstrs(
                 (
                     quicksum(x[j, i, k] for j in nodes_depots)
@@ -285,11 +292,7 @@ class ReoptModel:
 
             # STANDARD SEATS CAPACITY CONSTRAINTS
             m.addConstrs(
-                (
-                    q_S[nodes_depots[2 * self.num_requests + k], k]
-                    == L_S[k] - E_S[nodes_depots[2 * self.num_requests + k]]
-                    for k in vehicles
-                ),
+                (q_S[origins[k][1], k] == E_S[k] for k in vehicles),
                 name="SCapacity1",
             )
 
@@ -339,7 +342,7 @@ class ReoptModel:
                         (Q_S[k] - L_S[i]) * x[self.num_requests + i, j, k]
                         for j in nodes_depots
                     )
-                    >= q_S[n + i, k]
+                    >= q_S[self.num_requests + i, k]
                     for i in pickups
                     for k in vehicles
                 ),
@@ -356,15 +359,12 @@ class ReoptModel:
                 name="SCapacity6",
             )
 
-            # WHEELCHAIR SEATS CAPACITY CONSTRAINTS #NOTE:needs update
+            # WHEELCHAIR SEATS CAPACITY CONSTRAINTS
             m.addConstrs(
-                (
-                    q_W[nodes_depots[2 * self.num_requests + k], k]
-                    == L_W[k] - E_W[nodes_depots[2 * self.num_requests + k]]
-                    for k in vehicles
-                ),
+                (q_W[origins[k][1], k] == E_W[k] for k in vehicles),
                 name="WCapacity1",
             )
+
             m.addConstrs(
                 (
                     q_W[i, k] + L_W[j] - q_W[j, k]
@@ -411,7 +411,7 @@ class ReoptModel:
                         (Q_W[k] - L_W[i]) * x[self.num_requests + i, j, k]
                         for j in nodes_depots
                     )
-                    >= q_W[n + i, k]
+                    >= q_W[self.num_requests + i, k]
                     for i in pickups
                     for k in vehicles
                 ),
@@ -430,12 +430,12 @@ class ReoptModel:
 
             # TIME WINDOW CONSTRAINTS
             m.addConstrs(
-                (T_S_L[i].timestamp() - l[i] <= t[i] + M_T * s_i for i in nodes),
+                (T_S_L[i].timestamp() - l[i] <= t[i] + M * s[i] for i in nodes),
                 name="TimeWindow1.1",
             )
 
             m.addConstrs(
-                (t[i] - M_T * s_i <= T_S_U[i].timestamp() + u[i] for i in nodes),
+                (t[i] - M * s[i] <= T_S_U[i].timestamp() + u[i] for i in nodes),
                 name="TimeWindow1.2",
             )
 
@@ -451,7 +451,7 @@ class ReoptModel:
 
             m.addConstrs(
                 (
-                    t[i] + T_ij[i][j].total_seconds() - t[j]
+                    t[i] + S + T_ij[i][j].total_seconds() - t[j]
                     <= M_ij[i][j].total_seconds() * (1 - x[i, j, k])
                     for i in nodes
                     for j in nodes
@@ -463,6 +463,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     t[i]
+                    + S
                     + T_ij[i][self.num_requests + i].total_seconds()
                     - t[self.num_requests + i]
                     <= 0
@@ -492,6 +493,7 @@ class ReoptModel:
             )
 
             # REJECTION CONSTRAINTS
+
             m.addConstrs(
                 (
                     s[i]
@@ -500,6 +502,7 @@ class ReoptModel:
                 ),
                 name="Rejection1",
             )
+
             m.addConstrs(
                 (s[i] == s[self.num_requests + i] for i in pickups),
                 name="Rejection2",
@@ -507,6 +510,11 @@ class ReoptModel:
 
             # RUN MODEL
             m.optimize()
+            m.computeIIS()
+            m.write("model.ilp")
+
+            for i in nodes:
+                print(s[i].varName, s[i].x)
 
             for v in m.getVars():
                 if v.x > 0:

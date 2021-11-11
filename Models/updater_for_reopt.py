@@ -30,7 +30,7 @@ class Updater:
         E_W = (
             []
         )  # wheelchair load of vehickle k in lower time window of rolling horizon
-        T_O = []  # time of service of request i in original plan
+        T_O_t = {}  # time of service of request i in original plan
         vehicle_times = (
             {}
         )  # dictionary used to find start and end point of each vehicle within opened time frame
@@ -38,9 +38,8 @@ class Updater:
         fixate_t = {}  # a dict of all t variables that must be fixed to its value
 
         # Sets
-        n = self.num_requests  # number of pickup nodes
-        self.num_nodes = 2 * n
-        self.num_nodes_and_depots = 2 * num_vehicles + 2 * n
+        self.num_nodes = 2 * self.num_requests
+        self.num_nodes_and_depots = 2 * num_vehicles + 2 * self.num_requests
 
         # CREATE NEW SETS
         pickups_new.append(self.num_requests - 1)
@@ -80,22 +79,32 @@ class Updater:
         )
 
         for t_i in self.route_plan["t"].keys():
-            T_O.append(self.route_plan["t"][t_i])
+            if t_i < self.num_requests - 1:
+                T_O_t[t_i] = self.route_plan["t"][t_i]
+            else:
+                T_O_t[t_i + 1] = self.route_plan["t"][t_i]
+
             if (
                 pd.to_datetime(self.route_plan["t"][t_i], unit="s") < time_request_U
                 and pd.to_datetime(self.route_plan["t"][t_i], unit="s") > time_request_L
             ):
-                if t_i <= self.num_requests - 1:
+                if t_i < self.num_requests - 1:
                     pickups_remaining.append(t_i)
                     nodes_remaining.append(t_i)
                     vehicle_times[t_i] = pd.to_datetime(
                         self.route_plan["t"][t_i], unit="s"
                     )
                 else:
-                    nodes_remaining.append(t_i)
+                    nodes_remaining.append(t_i + 1)
                     vehicle_times[t_i] = pd.to_datetime(
                         self.route_plan["t"][t_i], unit="s"
                     )
+
+        for i in nodes_new:
+            T_O_t[i] = -1
+        T_O = []
+        for i in sorted(T_O_t.keys()):
+            T_O.append(T_O_t[i])
 
         # Load for each request
         L_S = df["Number of Passengers"].tolist()
@@ -118,16 +127,18 @@ class Updater:
         # Origins for each vehicle
         origins = {}
         for t in vehicle_times.keys():
-            v = next(
-                a[2]
-                for a in self.route_plan["x"].keys()
-                if a[1] == t and self.route_plan["x"][a] == 1
-            )
+            for a in self.route_plan["x"].keys():
+                if a[1] == t and self.route_plan["x"][a] == 1:
+                    v = a[2]
             if v not in origins.keys():
-                origins[v] = (vehicle_times[t], t)
+                r = t if t < self.num_requests - 1 else t + 1
+                r = t + 2 if t >= 2 * (self.num_requests - 1) else r
+                origins[v] = (vehicle_times[t], r)
             else:
                 if vehicle_times[t] < origins[v][0]:
-                    origins[v] = (vehicle_times[t], t)
+                    r = t if t < self.num_requests - 1 else t + 1
+                    r = t + 2 if t >= 2 * (self.num_requests - 1) else r
+                    origins[v] = (vehicle_times[t], r)
         for k in vehicles:
             # A vehicle might not be used
             if k not in origins.keys():
@@ -152,13 +163,13 @@ class Updater:
                         (
                             np.deg2rad(
                                 df.loc[
-                                    (item[1][1] - self.num_requests - 1),
+                                    (item[1][1] - self.num_requests),
                                     "Destination Lat",
                                 ]
                             ),
                             np.deg2rad(
                                 df.loc[
-                                    (item[1][1] - self.num_requests - 1),
+                                    (item[1][1] - self.num_requests),
                                     "Destination Lng",
                                 ]
                             ),
@@ -179,16 +190,18 @@ class Updater:
         # Destinations for each vehicle
         destinations = {}
         for t in vehicle_times.keys():
-            v = next(
-                a[2]
-                for a in self.route_plan["x"].keys()
-                if a[1] == t and self.route_plan["x"][a] == 1
-            )
+            for a in self.route_plan["x"].keys():
+                if a[1] == t and self.route_plan["x"][a] == 1:
+                    v = a[2]
             if v not in destinations.keys():
-                destinations[v] = (vehicle_times[t], t)
+                r = t if t < self.num_requests - 1 else t + 1
+                r = t + 2 if t >= 2 * (self.num_requests - 1) else r
+                destinations[v] = (vehicle_times[t], r)
             else:
                 if vehicle_times[t] > destinations[v][0]:
-                    destinations[v] = (vehicle_times[t], t)
+                    r = t if t < self.num_requests - 1 else t + 1
+                    r = t + 2 if t >= 2 * (self.num_requests - 1) else r
+                    destinations[v] = (vehicle_times[t], r)
         for k in vehicles:
             # A vehicle might not be used
             if k not in destinations.keys():
@@ -213,64 +226,54 @@ class Updater:
                         (
                             np.deg2rad(
                                 df.loc[
-                                    item[1][1] - self.num_requests - 1,
+                                    item[1][1] - self.num_requests,
                                     "Destination Lat",
                                 ]
                             ),
                             np.deg2rad(
                                 df.loc[
-                                    item[1][1] - self.num_requests - 1,
+                                    item[1][1] - self.num_requests,
                                     "Destination Lng",
                                 ]
                             ),
                         )
                     )
 
-        # Find x-variables to fixate
-        not_remaining = [x for x in nodes if x not in nodes_remaining]
-        for x in not_remaining:
-            fixate_x.append(
-                next(
-                    a
-                    for a in self.route_plan["x"].keys()
-                    if self.route_plan["x"][a] == 1
-                    and a not in fixate_x
-                    and (a[0] == x or a[1] == x)
-                )
-            )
-        # NOTE: What about depots??
-        # need to add origins and destinations for vehicles within time window
-        for t in origins.keys():
-            fixate_x.append(
-                next(
-                    a
-                    for a in self.route_plan["x"].keys()
-                    if a[2] == t
-                    and len(origins[t]) > 0
-                    and a[1] == origins[t][1]
-                    and self.route_plan["x"][a] == 1
-                )
-            )
-        for t in destinations.keys():
-            fixate_x.append(
-                next(
-                    a
-                    for a in self.route_plan["x"].keys()
-                    if (
-                        a[2] == t
-                        and len(origins[t]) > 0
-                        and a[0] == destinations[t][1]
-                        and self.route_plan["x"][a] == 1
-                    )
-                )
-            )
+        # FIND X-VARIABLES TO FIXATE
+        for a in self.route_plan["x"].keys():
+            if self.route_plan["x"][a] == 1:
+                b = None
+                if a[0] > self.num_requests - 2:
+                    b = ((a[0] + 1), a[1], a[2])
+                    if a[0] >= 2 * (self.num_requests - 1):
+                        b = ((a[0] + 2), a[1], a[2])
+                if a[1] > self.num_requests - 2:
+                    if b:
+                        if a[1] >= 2 * (self.num_requests - 1):
+                            b = (b[0], (b[1] + 2), b[2])
+                        else:
+                            b = (b[0], (b[1] + 1), b[2])
+                    else:
+                        if a[1] >= 2 * (self.num_requests - 1):
+                            b = (a[0], (a[1] + 2), a[2])
+                        else:
+                            b = (a[0], (a[1] + 1), a[2])
+                if not b:
+                    b = a
+                fixate_x.append(b)
+
+        filtered = []
+        for el in fixate_x:
+            if el[0] in nodes_remaining and el[1] in nodes_remaining:
+                filtered.append(el)
+        for e in filtered:
+            fixate_x.remove(e)
+
         # need to remove x-variables for vehicles not initially used
         not_used_vehicles = [k for k in origins.keys() if len(origins[k]) == 0]
-        fixate_x = filter(
-            lambda x: x[0] in not_used_vehicles or x[1] in not_used_vehicles, fixate_x
-        )
+        fixate_x = [el for el in fixate_x if el[2] not in not_used_vehicles]
 
-        # Find t-variables to fixate
+        # FIND T-VARIABLES TO FIXATE
         for t_i in self.route_plan["t"].keys():
             if pd.to_datetime(self.route_plan["t"][t_i], unit="s") <= time_request_L:
                 fixate_t[t_i] = self.route_plan["t"][t_i]
@@ -326,6 +329,8 @@ class Updater:
             nodes,
             fixate_x,
             fixate_t,
+            origins,
+            destinations,
             E_S,
             E_W,
             T_O,

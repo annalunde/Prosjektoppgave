@@ -23,3 +23,9 @@ F = 0.5
 
 # Number of hours to open to reoptimize
 H = 1
+
+# Big M
+M = timedelta(hours=2).total_seconds()  # in hours
+
+# Service time
+S = timedelta(minutes=2).total_seconds()

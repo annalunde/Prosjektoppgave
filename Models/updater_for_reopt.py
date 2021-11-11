@@ -1,10 +1,13 @@
 import datetime
 import pandas as pd
 import gurobipy as gp
+from decouple import config
 from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
-from reoptimization_config import *
+from math import radians, degrees
+from Models.reoptimization_config import *
+from sklearn.metrics.pairwise import haversine_distances
 
 
 class Updater:
@@ -31,54 +34,64 @@ class Updater:
         num_nodes_and_depots = 2 * num_vehicles + 2 * n
 
         # CREATE NEW SETS
-        P_N.append(self.num_requests)
-        N_N.append(self.num_requests)
-        N_N.append(2*self.num_requests)
+        pickups_new.append(self.num_requests)
+        nodes_new.append(self.num_requests)
+        nodes_new.append(2 * self.num_requests)
 
         # CREATE ALL SETS
-        P = [i for i in range(self.num_requests)]
-        N = [i for i in range(2*self.num_requests)]
+        pickups = [i for i in range(self.num_requests)]
+        nodes = [i for i in range(2 * self.num_requests)]
+        vehicles = [i for i in range(num_vehicles)]
 
         # FETCH DATA
         if self.first:
-            df = pd.read_csv(config("data_path_test"), nrows=self.num_requests-1)
+            df = pd.read_csv(config("data_path_test"), nrows=self.num_requests - 1)
             df = df.append(self.event)
             df.to_csv(f"data_requests_for:{self.num_requests}")
-        
+
         else:
             df = pd.read_csv(f"data_requests_for:{self.num_requests-1}")
             df = df.append(self.event)
             df.to_csv(f"data_requests_for:{self.num_requests}")
-            
 
         # CREATE REMAINING SETS
-        time_now = event["Request Creation Time"]
-        time_request = event["Requested Pickup Time"]
-        time_request = event["Requested Dropoff Time"] if event["Requested Pickup Time"].isnull().sum()
+        time_now = pd.to_datetime(self.event["Request Creation Time"])
+        time_request = pd.to_datetime(self.event["Requested Pickup Time"])
+        time_request = (
+            pd.to_datetime(self.event["Requested Dropoff Time"])
+            if pd.isna(self.event["Requested Pickup Time"])
+            else time_request
+        )
         time_request_U = time_request + timedelta(hours=H)
-        time_request_L = time_request - timedelta(hours=H) if (time_request - timedelta(hours=H)) > time_now else time_now
+        time_request_L = (
+            time_request - timedelta(hours=H)
+            if (time_request - timedelta(hours=H)) > time_now
+            else time_now
+        )
 
         for t_i in self.route_plan["t"].keys():
-            #T_O.append(self.route_plan["t"][t_i]) #NOTE if for all pickup nodes
-            if self.route_plan["t"][t_i] < time_request_U and self.route_plan["t"][t_i] > time_request_L:
+            if (
+                pd.to_datetime(self.route_plan["t"][t_i]) < time_request_U
+                and pd.to_datetime(self.route_plan["t"][t_i]) > time_request_L
+            ):
                 if t_i[0] <= self.num_requests - 1:
-                    P_R.append(t_i[0])
-                    T_O.append(self.route_plan["t"][t_i]) #NOTE if only pickup nodes that are open
-                    N_R.append(t_i[0])
-                    N_R.append(t_i[0] + self.num_requests)
+                    pickups_remaining.append(t_i[0])
+                    T_O.append(
+                        pd.to_datetime(self.route_plan["t"][t_i])
+                    )  # NOTE if only pickup nodes that are open
+                    nodes_remaining.append(t_i[0])
+                    nodes_remaining.append(t_i[0 + self.num_requests])
                 else:
-                    N_R.append(t_i[0])
-            
-    
+                    nodes_remaining.append(t_i[0])
 
         for k in vehicles:
-            for i in P_R:
+            for i in pickups_remaining:
                 E_S.append(self.route_plan["q_S"][i, k])
                 E_W.append(self.route_plan["q_W"][i, k])
 
         # Load for each request
-        L_S = df["Number of Passengers"].tolist()  
-        L_W = df["Wheelchair"].tolist() 
+        L_S = df["Number of Passengers"].tolist()
+        L_W = df["Wheelchair"].tolist()
 
         # Lat and lon for each request
         origin_lat_lon = list(
@@ -158,7 +171,18 @@ class Updater:
             for j in range(num_nodes):
                 M_ij[i][j] = T_H_U[i] + T_ij[i][j] - T_H_L[j]
 
-        # return P_R, P_N, P, N_R, N_N, N, E_S, E_W, T_O
+        return pickups_remaining, pickups_new, pickups, nodes_remaining, nodes_new, nodes, E_S, E_W, T_O
+
+    def update_time_windows(self, i):
+        T_S_L[i] -= timedelta(minutes=5)
+        T_H_L[i] -= timedelta(minutes=5)
+        T_S_U[i] += timedelta(minutes=5)
+        T_H_U[i] += timedelta(minutes=5)
+
+    def remove_rejected_request(self):
+        df = pd.read_csv(f"data_requests_for:{self.num_requests}")
+        df = df.head(-1)
+        df.to_csv(f"data_requests_for:{self.num_requests - 1}")
 
     def update_time_windows(self, i):
         T_S_L[i] -= timedelta(minutes=5)
@@ -183,4 +207,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

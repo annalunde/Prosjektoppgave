@@ -3,13 +3,14 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
-from models.reoptimization_config import *
-from models.updater_for_reopt import *
-from models.updater_for_reopt import Updater
+from Models.reoptimization_config import *
+from Models.updater_for_reopt import *
+
+# from models.updater_for_reopt import Updater
 
 
 class ReoptModel:
-    def _init_(self, current_route_plan, event, num_requests, first):
+    def __init__(self, current_route_plan, event, num_requests, first):
         self.model = "MIP 1"
         self.route_plan = current_route_plan
         self.event = event
@@ -98,7 +99,7 @@ class ReoptModel:
             pickups = [i for i in range(self.num_requests)]
             dropoffs = [i for i in range(self.num_requests, 2 * self.num_requests)]
             nodes = [i for i in range(2 * self.num_requests)]
-            nodes_depots = [i for i in range(num_nodes_and_depots)]
+            nodes_depots = [i for i in range(self.updater.num_nodes_and_depots)]
             vehicles = [i for i in range(num_vehicles)]
 
             # Create variables
@@ -117,7 +118,6 @@ class ReoptModel:
             y = m.addVars(vehicles, vtype=GRB.BINARY, name="y")
 
             # OBJECTIVE FUNCTION
-            """
             m.setObjective(
                 quicksum(
                     C_D[k] * D_ij[i][j] * x[i, j, k]
@@ -132,26 +132,6 @@ class ReoptModel:
                 + quicksum(C_O * (z_plus[i] - z_minus[i]) for i in nodes_remaining),
                 GRB.MINIMIZE,
             )
-            """
-
-            m.setObjectiveN(
-                quicksum(
-                    C_D[k] * D_ij[i][j] * x[i, j, k]
-                    for i in nodes_depots
-                    for j in nodes_depots
-                    for k in vehicles
-                )
-                + quicksum(C_K * y[k] for k in vehicles),
-                index=0, weight=0.5)
-
-            m.setObjectiveN(
-                quicksum(C_T * (l[i] + u[i]) for i in nodes)
-                + quicksum(C_F * d[i] for i in pickups)
-                + quicksum(C_R * s[i] for i in pickups_new)
-                + quicksum(C_O * (z_plus[i] - z_minus[i]) for i in nodes_remaining),
-                index = 1, weight=0.5)
-
-            m.ModelSense = GRB.MINIMIZE
 
             # FLOW CONSTRAINTS
             m.addConstrs(
@@ -494,7 +474,7 @@ class ReoptModel:
 
             # RERUN MODEL IF REQUEST IS REJECTED
 
-            for i in nodes:
+            for i in pickups_new:
                 counter = 0
                 while s[i].x == 1 and counter < R:
                     self.updater.update_time_windows(i)
@@ -514,6 +494,7 @@ class ReoptModel:
                 )
 
             print("Obj: %g" % m.objVal)
+
             self.vizualize_route(results=m.getVars())
 
             route_plan = dict()
@@ -527,8 +508,3 @@ class ReoptModel:
         except GurobiError as e:
             print("Error reported")
             print(e.message)
-
-
-if __name__ == "__main__":
-    model = Model()
-    model.run_model()

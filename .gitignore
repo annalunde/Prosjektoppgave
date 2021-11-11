@@ -11,6 +11,7 @@ Data/
 data_RAT.csv
 data_TT.csv
 map_requests.html
+data_requests
 
 # C extensions
 *.so

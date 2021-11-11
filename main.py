@@ -1,4 +1,5 @@
 import time
+import pandas as pd
 import gurobipy as gp
 from gurobipy import GRB
 from gurobipy import GurobiError
@@ -18,12 +19,14 @@ def main(num_events=10, sleep=60):
     """
 
     # Initial Route Plan
+    print("Running initial model")
     init_model = InitialModel()
     initial_route_plan = init_model.run_model()
     num_requests = init_model.get_n()
 
     # Event Based Rerouting
     for i in range(num_events):
+        print("Event Based Reoptimization")
         first = True if i == 0 else False
         event = get_event(i)
         num_requests += 1

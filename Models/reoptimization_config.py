@@ -24,5 +24,8 @@ F = 0.5
 # Number of hours to open to reoptimize
 H = 1
 
-# Number of times to change time windows before rejecting
-R = 3
+# Big M
+M = timedelta(hours=2).total_seconds()  # in hours
+
+# Service time
+S = timedelta(minutes=2).total_seconds()

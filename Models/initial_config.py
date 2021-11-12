@@ -88,3 +88,6 @@ for i in range(num_nodes):
         M_ij[i][j] = T_H_U[i] + T_ij[i][j] - T_H_L[j]
 
 M = timedelta(hours=2).total_seconds()  # in hours
+
+# Service time
+S = timedelta(minutes=2).total_seconds()

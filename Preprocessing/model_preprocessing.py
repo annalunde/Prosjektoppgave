@@ -130,14 +130,14 @@ def main():
             date=[2021, 5, 10]
         )
         preprocessor.add_time_windows(
-            initial_model_data, filename="Data/Test/test_data_initial_model.csv"
+            initial_model_data, filename="test_data_initial_model.csv"
         )
 
         reopt_model_data = preprocessor.process_RAT_events_for_reoptimization_model(
             date=[2021, 5, 10]
         )
         preprocessor.add_time_windows(
-            reopt_model_data, filename="Data/Test/test_data_events.csv"
+            reopt_model_data, filename="test_data_events.csv"
         )
 
     except Exception as e:

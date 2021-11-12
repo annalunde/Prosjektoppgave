@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from scipy.spatial import distance
 
 # Vehicles
-num_vehicles = 3  # NOTE: cannot be set lower than initial config num_vehicles
+num_vehicles = 2  # NOTE: cannot be set lower than initial config num_vehicles
 
 # Costs and penalties
 C_D = [1, 1, 1, 1, 1, 1]  # per vehicle
@@ -15,7 +15,7 @@ C_K = [100, 100, 100, 100, 100]  # cost of using vehicle k
 C_O = 10  # cost of deviation from original plan
 
 # Capacity per vehicle
-Q_S = [16, 16, 16, 16]
+Q_S = [5, 5, 5, 5]
 Q_W = [1, 1, 1, 1]
 
 # Allowed excess ride time

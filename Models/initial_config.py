@@ -6,8 +6,8 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # Sets
-n = 20  # number of pickup nodes
-num_vehicles = 3
+n = 10  # number of pickup nodes
+num_vehicles = 2
 num_nodes = 2 * n
 num_nodes_and_depots = 2 * num_vehicles + 2 * n
 
@@ -24,7 +24,7 @@ Q_W = [1, 1, 1, 1]
 F = 0.5
 
 # Different parameters per node
-df = pd.read_csv(config("data_path_tuning"), nrows=n)
+df = pd.read_csv(config("data_path_test"), nrows=n)
 
 # Load for each request
 L_S = df["Number of Passengers"].tolist()

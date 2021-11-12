@@ -107,15 +107,15 @@ class Model:
 
             # OBJECTIVE FUNCTION
 
-            m.setObjectiveN(0.2*quicksum(
+            m.setObjectiveN(0.9*quicksum(
                     C_D[k] * D_ij[i][j] * x[i, j, k]
                     for i in nodes_depots
                     for j in nodes_depots
                     for k in vehicles
                 ), index=0)
 
-            m.setObjectiveN(0.8*quicksum(C_T * (l[i] + u[i]) for i in nodes)
-                 + 0.8*quicksum(C_F * d[i] for i in pickups), index=1)
+            m.setObjectiveN(0.1*quicksum(C_T * (l[i] + u[i]) for i in nodes)
+                 + 0.1*quicksum(C_F * d[i] for i in pickups), index=1)
 
             m.ModelSense = GRB.MINIMIZE
 
@@ -444,7 +444,7 @@ class Model:
             )
 
             # RUN MODEL
-            m.setParam(GRB.Param.NumericFocus, 1.5)
+            m.setParam(GRB.Param.NumericFocus, 2)
             m.optimize()
 
             """

@@ -160,7 +160,7 @@ class ReoptModel:
                 + quicksum(C_F * d[i] for i in pickups)
                 + quicksum(C_R * s[i] for i in nodes)
                 + quicksum(C_K[k] * y[k] for k in vehicles)
-                + quicksum(C_O * (z_plus[i] - z_minus[i]) for i in nodes_remaining),
+                + quicksum(C_O * (z_plus[i] + z_minus[i]) for i in nodes_remaining),
                 GRB.MINIMIZE,
             )
 
@@ -566,7 +566,7 @@ class ReoptModel:
             for i in nodes:
                 print(
                     t[i].varName,
-                    datetime.fromtimestamp(t[i].x).strftime("%Y-%m-%d %H:%M:%S"),
+                    datetime.utcfromtimestamp(t[i].x).strftime("%Y-%m-%d %H:%M:%S"),
                 )
 
             print("Obj: %g" % m.objVal)

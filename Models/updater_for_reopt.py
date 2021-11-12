@@ -145,11 +145,13 @@ class Updater:
                 origins[k] = ()
 
         for item in sorted(origins.items()):
-            if len(item[1]) == 0:
-                vehicle_lat_lon.append(
-                    (radians(59.946829115276145), radians(10.779841653639243))
-                )
+            # if len(item[1]) == 0:
 
+            vehicle_lat_lon.append(
+                (radians(59.946829115276145), radians(10.779841653639243))
+            )
+            """
+            NOTE
             else:
                 if item[1][1] <= self.num_requests - 1:
                     vehicle_lat_lon.append(
@@ -175,6 +177,7 @@ class Updater:
                             ),
                         )
                     )
+            """
 
         # Loads of each vehicle
         for k in sorted(origins.keys()):
@@ -208,11 +211,12 @@ class Updater:
                 destinations[k] = ()
 
         for item in sorted(destinations.items()):
-            if len(item[1]) == 0:
-                vehicle_lat_lon.append(
-                    (radians(59.946829115276145), radians(10.779841653639243))
-                )
-
+            # if len(item[1]) == 0:
+            vehicle_lat_lon.append(
+                (radians(59.946829115276145), radians(10.779841653639243))
+            )
+            """
+            NOTE
             else:
                 if item[1][1] <= self.num_requests - 1:
                     vehicle_lat_lon.append(
@@ -238,6 +242,7 @@ class Updater:
                             ),
                         )
                     )
+            """
 
         # FIND X-VARIABLES TO FIXATE
         for a in self.route_plan["x"].keys():

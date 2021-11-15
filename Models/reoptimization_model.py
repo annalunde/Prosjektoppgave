@@ -459,6 +459,7 @@ class ReoptModel:
             )
 
             # TIME WINDOW CONSTRAINTS
+
             m.addConstrs(
                 (T_S_L[i].timestamp() - l[i] <= t[i] + M * s[i] for i in nodes),
                 name="TimeWindow1.1",
@@ -481,6 +482,7 @@ class ReoptModel:
                 name="TimeWindow2.2",
             )
             """
+
             m.addConstrs(
                 (T_H_L[i].timestamp() <= t[i] for i in nodes),
                 name="TimeWindow2.1",
@@ -552,6 +554,19 @@ class ReoptModel:
 
             # RUN MODEL
             m.optimize()
+            m.computeIIS()
+            m.write("model.ilp")
+
+            print(
+                "time window 2.1: ",
+                datetime.utcfromtimestamp(1.6206597e09).strftime("%Y-%m-%d %H:%M:%S"),
+            )
+            print(
+                "Upper bound: ",
+                datetime.utcfromtimestamp(1.6206417253007121e09).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+            )
 
             for i in nodes:
                 print(s[i].varName, s[i].x)

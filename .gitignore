@@ -268,3 +268,6 @@ web.code-workspace
 
 # Notes
 .notes.txt
+
+# ilp-files
+*.ilp

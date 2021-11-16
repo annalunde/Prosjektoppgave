@@ -173,20 +173,8 @@ class Updater:
                     )
             """
 
-<<<<<<< HEAD
-        # Loads of each vehicle
-        for k in sorted(origins.keys()):
-            if (
-                len(origins[k]) == 0
-            ):  # the vehicle is not used and get default value of load
-                E_S.append(0)
-                E_W.append(0)
-            else:
-                E_S.append(self.route_plan["q_S"][origins[k][1], k])
-                E_W.append(self.route_plan["q_W"][origins[k][1], k])
 
-=======
->>>>>>> 0d19c31c59ea076086b996ded8798a34851625de
+
         # Destinations for each vehicle
         destinations = {}
         for t in vehicle_times.keys():

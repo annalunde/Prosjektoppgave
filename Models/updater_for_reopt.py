@@ -44,7 +44,7 @@ class Updater:
         # CREATE NEW SETS
         pickups_new.append(self.num_requests - 1)
         nodes_new.append(self.num_requests - 1)
-        nodes_new.append(2 * (self.num_requests - 1))
+        nodes_new.append(2 * (self.num_requests) - 1)
 
         # CREATE ALL SETS
         pickups = [i for i in range(self.num_requests)]

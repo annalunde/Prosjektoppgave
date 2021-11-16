@@ -61,6 +61,7 @@ Position = request_lat_lon_deg + vehicle_lat_lon_deg
 
 # Distance matrix
 D_ij = haversine_distances(lat_lon, lat_lon) * 6371
+print(D_ij[10][13]+D_ij[8][15]+D_ij[9][14])
 
 # Travel time matrix
 speed = 40

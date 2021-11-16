@@ -3,6 +3,8 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
+
+from models.initial_config import Position
 from models.reoptimization_config import *
 from models.updater_for_reopt import *
 from models.updater_for_reopt import Updater
@@ -118,7 +120,7 @@ class ReoptModel:
 
         try:
             m = gp.Model("mip1")
-            m.setParam("NumericFocus", 2)
+            m.setParam("NumericFocus", 3)
 
             pickups = [i for i in range(self.num_requests)]
             dropoffs = [i for i in range(self.num_requests, 2 * self.num_requests)]
@@ -143,7 +145,7 @@ class ReoptModel:
             l = m.addVars(nodes, name="l")
             u = m.addVars(nodes, name="u")
             d = m.addVars(pickups, name="d")
-            s = m.addVars(nodes, vtype=GRB.BINARY, name="s")
+            s = m.addVars(pickups_new, vtype=GRB.BINARY, name="s")
             z_plus = m.addVars(nodes_remaining, name="z+")
             z_minus = m.addVars(nodes_remaining, name="z-")
             y = m.addVars(vehicles, vtype=GRB.BINARY, name="y")
@@ -155,10 +157,11 @@ class ReoptModel:
                     for i in nodes_depots
                     for j in nodes_depots
                     for k in vehicles
+                    if j != (2 * self.num_requests + k + num_vehicles)
                 )
                 + quicksum(C_T * (l[i] + u[i]) for i in nodes)
                 + quicksum(C_F * d[i] for i in pickups)
-                + quicksum(C_R * s[i] for i in nodes)
+                + quicksum(C_R * s[i] for i in pickups_new)
                 + quicksum(C_K[k] * y[k] for k in vehicles)
                 + quicksum(C_O * (z_plus[i] + z_minus[i]) for i in nodes_remaining),
                 GRB.MINIMIZE,
@@ -180,7 +183,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     quicksum(x[i, j, k] for j in nodes_depots for k in vehicles) == 1
-                    for i in pickups
+                    for i in pickups_remaining
                 ),
                 name="Flow1",
             )
@@ -461,38 +464,41 @@ class ReoptModel:
             # TIME WINDOW CONSTRAINTS
 
             m.addConstrs(
-                (T_S_L[i].timestamp() - l[i] <= t[i] + M * s[i] for i in nodes),
+                (T_S_L[i].timestamp() - l[i] <= t[i] for i in nodes),
                 name="TimeWindow1.1",
             )
 
             m.addConstrs(
-                (t[i] - M * s[i] <= T_S_U[i].timestamp() + u[i] for i in nodes),
+                (t[i] <= T_S_U[i].timestamp() + u[i] for i in nodes),
                 name="TimeWindow1.2",
             )
-
             """
+<<<<<<< HEAD
             NOTE
             m.addConstrs(
-                (T_H_L[i].timestamp() * s[i] <= t[i] for i in nodes),
+                (T_H_L[i].timestamp() * (1-s[i]) <= t[i] for i in nodes),
                 name="TimeWindow2.1",
             )
 
             m.addConstrs(
-                (t[i] <= T_H_U[i].timestamp() * s[i] for i in nodes),
+                (t[i] <= T_H_U[i].timestamp() * (1-s[i]) for i in nodes),
                 name="TimeWindow2.2",
             )
+=======
+            NOTE: fjernet alle s i time windows
+>>>>>>> d5c3a10aa4f5446af77eb2a71566fc695cc21bdc
             """
 
             m.addConstrs(
                 (T_H_L[i].timestamp() <= t[i] for i in nodes),
                 name="TimeWindow2.1",
             )
-
+            '''
             m.addConstrs(
                 (t[i] <= T_H_U[i].timestamp() for i in nodes),
                 name="TimeWindow2.2",
             )
-
+            '''
             m.addConstrs(
                 (
                     t[i] + S + T_ij[i][j].total_seconds() - t[j]
@@ -506,11 +512,8 @@ class ReoptModel:
 
             m.addConstrs(
                 (
-                    t[i]
-                    + S
-                    + T_ij[i][self.num_requests + i].total_seconds()
-                    - t[self.num_requests + i]
-                    <= 0
+                    t[i] + S + T_ij[i][self.num_requests + i].total_seconds()
+                    <= t[self.num_requests + i]
                     for i in pickups
                 ),
                 name="TimeWindow4",
@@ -520,7 +523,6 @@ class ReoptModel:
                 (
                     T_O[i] - t[i] == z_plus[i] - z_minus[i]
                     for i in nodes_remaining
-                    for k in vehicles
                 ),
                 name="TimeWindow5",
             )
@@ -542,33 +544,19 @@ class ReoptModel:
                 (
                     s[i]
                     == 1 - quicksum(x[i, j, k] for j in nodes_depots for k in vehicles)
-                    for i in nodes
+                    for i in pickups_new
                 ),
                 name="Rejection1",
             )
 
-            m.addConstrs(
-                (s[i] == s[self.num_requests + i] for i in pickups),
-                name="Rejection2",
-            )
+            "NOTE: fjernet rejection 2"
 
             # RUN MODEL
             m.optimize()
-            m.computeIIS()
-            m.write("model.ilp")
+            # m.computeIIS()
+            # m.write("model.ilp")
 
-            print(
-                "time window 2.1: ",
-                datetime.utcfromtimestamp(1.6206597e09).strftime("%Y-%m-%d %H:%M:%S"),
-            )
-            print(
-                "Upper bound: ",
-                datetime.utcfromtimestamp(1.6206417253007121e09).strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                ),
-            )
-
-            for i in nodes:
+            for i in pickups_new:
                 print(s[i].varName, s[i].x)
                 if s[i].x > 0.1:
                     print("Your request has been rejected:/")

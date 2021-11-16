@@ -1,0 +1,9 @@
+\ Model mip1_copy
+\ LP format - for model browsing. Use MPS format to capture full model detail.
+Minimize
+ 
+Subject To
+ TimeWindow2.1[10]: t[10] >= 1.6334469e+09
+Bounds
+ -infinity <= t[10] <= 1.6206423253007121e+09
+End

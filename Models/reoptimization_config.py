@@ -8,8 +8,8 @@ num_vehicles = 3  # NOTE: cannot be set lower than initial config num_vehicles
 
 # Costs and penalties
 C_D = [1, 1, 1, 1, 1, 1]  # per vehicle
-C_F = 1
-C_T = 1
+C_F = 1/60
+C_T = 1/60
 C_R = 1  # lost revenue from not serving a request
 C_K = [100, 100, 100, 100, 100]  # cost of using vehicle k
 C_O = 10  # cost of deviation from original plan

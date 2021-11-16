@@ -324,10 +324,12 @@ class ReoptModel:
             )
 
             # STANDARD SEATS CAPACITY CONSTRAINTS
+
             m.addConstrs(
                 (q_S[origins[k][1], k] == E_S[k] for k in vehicles),
                 name="SCapacity1",
             )
+
 
             m.addConstrs(
                 (
@@ -393,10 +395,12 @@ class ReoptModel:
             )
 
             # WHEELCHAIR SEATS CAPACITY CONSTRAINTS
+
             m.addConstrs(
                 (q_W[origins[k][1], k] == E_W[k] for k in vehicles),
                 name="WCapacity1",
             )
+
 
             m.addConstrs(
                 (
@@ -542,7 +546,6 @@ class ReoptModel:
                 print(s[i].varName, s[i].x)
                 if s[i].x > 0.1:
                     print("Your request has been rejected:/")
-                    exit
 
             for v in m.getVars():
                 if v.x > 0:

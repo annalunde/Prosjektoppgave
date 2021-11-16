@@ -102,8 +102,6 @@ class ReoptModel:
             fixate_t,
             origins,
             destinations,
-            E_S,
-            E_W,
             T_O,
             D_ij,
             T_ij,
@@ -255,7 +253,6 @@ class ReoptModel:
             )
 
             # vehicles cannot drive into destinations that are not their own
-            # NOTE
             m.addConstrs(
                 (
                     quicksum(
@@ -322,10 +319,6 @@ class ReoptModel:
             )
 
             # STANDARD SEATS CAPACITY CONSTRAINTS
-            m.addConstrs(
-                (q_S[origins[k][1], k] == E_S[k] for k in vehicles),
-                name="SCapacity1",
-            )
 
             m.addConstrs(
                 (
@@ -335,7 +328,7 @@ class ReoptModel:
                     for i in nodes_depots
                     for k in vehicles
                 ),
-                name="SCapacity2",
+                name="SCapacity1",
             )
 
             m.addConstrs(
@@ -346,7 +339,7 @@ class ReoptModel:
                     for i in nodes_depots
                     for k in vehicles
                 ),
-                name="SCapacity3",
+                name="SCapacity2",
             )
 
             m.addConstrs(
@@ -355,7 +348,7 @@ class ReoptModel:
                     for i in pickups
                     for k in vehicles
                 ),
-                name="SCapacity4.1",
+                name="SCapacity3.1",
             )
 
             m.addConstrs(
@@ -364,7 +357,7 @@ class ReoptModel:
                     for i in pickups
                     for k in vehicles
                 ),
-                name="SCapacity4.2",
+                name="SCapacity3.2",
             )
 
             m.addConstrs(
@@ -392,11 +385,6 @@ class ReoptModel:
 
             # WHEELCHAIR SEATS CAPACITY CONSTRAINTS
             m.addConstrs(
-                (q_W[origins[k][1], k] == E_W[k] for k in vehicles),
-                name="WCapacity1",
-            )
-
-            m.addConstrs(
                 (
                     q_W[i, k] + L_W[j] - q_W[j, k]
                     <= (Q_W[k] + L_W[j]) * (1 - x[i, j, k])
@@ -404,7 +392,7 @@ class ReoptModel:
                     for i in nodes_depots
                     for k in vehicles
                 ),
-                name="WCapacity2",
+                name="WCapacity1",
             )
 
             m.addConstrs(
@@ -415,7 +403,7 @@ class ReoptModel:
                     for i in nodes_depots
                     for k in vehicles
                 ),
-                name="WCapacity3",
+                name="WCapacity2",
             )
 
             m.addConstrs(
@@ -424,7 +412,7 @@ class ReoptModel:
                     for i in pickups
                     for k in vehicles
                 ),
-                name="WCapacity4.1",
+                name="WCapacity3.1",
             )
 
             m.addConstrs(
@@ -433,7 +421,7 @@ class ReoptModel:
                     for i in pickups
                     for k in vehicles
                 ),
-                name="WCapacity4.2",
+                name="WCapacity3.2",
             )
 
             m.addConstrs(
@@ -446,7 +434,7 @@ class ReoptModel:
                     for i in pickups
                     for k in vehicles
                 ),
-                name="WCapacity5",
+                name="WCapacity4",
             )
 
             m.addConstrs(
@@ -470,9 +458,6 @@ class ReoptModel:
                 (t[i] <= T_S_U[i].timestamp() + u[i] for i in nodes),
                 name="TimeWindow1.2",
             )
-            """
-            NOTE: fjernet alle s i time windows
-            """
 
             m.addConstrs(
                 (T_H_L[i].timestamp() <= t[i] for i in nodes),

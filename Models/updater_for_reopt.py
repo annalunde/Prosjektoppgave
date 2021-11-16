@@ -24,12 +24,6 @@ class Updater:
         nodes_remaining = []  # set of remaining pick-up and drop-off nodes
         nodes_new = []  # set of new pick-up and drop-off nodes
         nodes = []  # set of all pick-up and drop-off nodes
-        E_S = (
-            []
-        )  # standard seats load of vehicle k in lower time window of rolling horizon
-        E_W = (
-            []
-        )  # wheelchair load of vehickle k in lower time window of rolling horizon
         T_O_t = {}  # time of service of request i in original plan
         vehicle_times = (
             {}
@@ -162,43 +156,6 @@ class Updater:
             == 1
         ]
 
-        # Loads of each vehicle
-        for k in sorted(origins.keys()):
-            if (
-                k in not_used_vehicles
-            ):  # the vehicle is not used and get default value of load
-                E_S.append(0)
-                E_W.append(0)
-            else:
-                # NOTE: her!
-                if len(
-                    origins[k] == 0
-                ):  # the vehicle is in use, but it is not available within the time windows of the new request
-                    x_li = [
-                        x
-                        for x in self.route_plan["x"].keys()
-                        if self.route_plan["x"][x] == 1 and x[2] == k
-                    ]
-                    t_p = [
-                        x[0]
-                        for x in x_li
-                        if pd.to_datetime(self.route_plan["t"][x[0]], unit="s")
-                        < time_request_L
-                    ]
-                    t_d = [
-                        x[1]
-                        for x in x_li
-                        if pd.to_datetime(self.route_plan["t"][x[1]], unit="s")
-                        < time_request_L
-                    ]
-                    t = t_p + t_d
-                    # t_min = [l for l in t ]
-                    E_S.append(self.route_plan["q_S"][t_min, k])
-                    E_W.append(self.route_plan["q_W"][t_min, k])
-                else:
-                    E_S.append(self.route_plan["q_S"][origins[k][1], k])
-                    E_W.append(self.route_plan["q_W"][origins[k][1], k])
-
         # Destinations for each vehicle
         destinations = {}
         for t in vehicle_times.keys():
@@ -322,8 +279,6 @@ class Updater:
             fixate_t,
             origins,
             destinations,
-            E_S,
-            E_W,
             T_O,
             D_ij,
             T_ij,

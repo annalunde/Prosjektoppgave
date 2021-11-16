@@ -549,8 +549,6 @@ class ReoptModel:
                 name="Rejection1",
             )
 
-            "NOTE: fjernet rejection 2"
-
             # RUN MODEL
             m.optimize()
             # m.computeIIS()

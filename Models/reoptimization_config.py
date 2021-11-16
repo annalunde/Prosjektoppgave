@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from scipy.spatial import distance
 
 # Vehicles
-num_vehicles = 1  # NOTE: cannot be set lower than initial config num_vehicles
+num_vehicles = 3  # NOTE: cannot be set lower than initial config num_vehicles
 
 # Costs and penalties
 C_D = [1, 1, 1, 1, 1, 1]  # per vehicle
@@ -25,7 +25,7 @@ F = 0.5
 H = 1
 
 # Big M
-M = timedelta(hours=6.1).total_seconds()  # in hours
+M = timedelta(hours=2).total_seconds()  # in hours
 
 # Service time
 S = timedelta(minutes=2).total_seconds()

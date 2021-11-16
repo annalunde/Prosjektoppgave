@@ -29,13 +29,12 @@ def main(num_events=10, sleep=60):
         print("Event Based Reoptimization")
         first = True if i == 0 else False
         event = get_event(i)
-        print(event)
         num_requests += 1
         reopt_model = ReoptModel(initial_route_plan, event, num_requests, first)
         reopt_plan = reopt_model.run_model()
         print("Waiting for new request")
         time.sleep(sleep)
-        initial_route_plan = reopt_plan
+        initia_route_plan = reopt_plan
 
 
 def get_event(i):
@@ -44,6 +43,6 @@ def get_event(i):
 
 
 if __name__ == "__main__":
-    num_events = 2
-    sleep = 60
+    num_events = 12
+    sleep = 30
     main(num_events, sleep)

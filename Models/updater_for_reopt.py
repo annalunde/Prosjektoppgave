@@ -145,50 +145,59 @@ class Updater:
                 origins[k] = ()
 
         for item in sorted(origins.items()):
-            # if len(item[1]) == 0:
-
             vehicle_lat_lon.append(
                 (radians(59.946829115276145), radians(10.779841653639243))
             )
-            """
-            NOTE
-            else:
-                if item[1][1] <= self.num_requests - 1:
-                    vehicle_lat_lon.append(
-                        (
-                            np.deg2rad(df.loc[item[1][1], "Origin Lat"]),
-                            np.deg2rad(df.loc[item[1][1], "Origin Lng"]),
-                        )
-                    )
-                else:
-                    vehicle_lat_lon.append(
-                        (
-                            np.deg2rad(
-                                df.loc[
-                                    (item[1][1] - self.num_requests),
-                                    "Destination Lat",
-                                ]
-                            ),
-                            np.deg2rad(
-                                df.loc[
-                                    (item[1][1] - self.num_requests),
-                                    "Destination Lng",
-                                ]
-                            ),
-                        )
-                    )
-            """
+
+        not_used_vehicles = [
+            k
+            for k in origins.keys()
+            if self.route_plan["x"][
+                (
+                    2 * (self.num_requests - 1) + k,
+                    2 * (self.num_requests - 1) + k + num_vehicles,
+                    k,
+                )
+            ]
+            == 1
+        ]
 
         # Loads of each vehicle
         for k in sorted(origins.keys()):
             if (
-                len(origins[k]) == 0
+                k in not_used_vehicles
             ):  # the vehicle is not used and get default value of load
                 E_S.append(0)
                 E_W.append(0)
             else:
-                E_S.append(self.route_plan["q_S"][origins[k][1], k])
-                E_W.append(self.route_plan["q_W"][origins[k][1], k])
+                # NOTE: her!
+                if len(
+                    origins[k] == 0
+                ):  # the vehicle is in use, but it is not available within the time windows of the new request
+                    x_li = [
+                        x
+                        for x in self.route_plan["x"].keys()
+                        if self.route_plan["x"][x] == 1 and x[2] == k
+                    ]
+                    t_p = [
+                        x[0]
+                        for x in x_li
+                        if pd.to_datetime(self.route_plan["t"][x[0]], unit="s")
+                        < time_request_L
+                    ]
+                    t_d = [
+                        x[1]
+                        for x in x_li
+                        if pd.to_datetime(self.route_plan["t"][x[1]], unit="s")
+                        < time_request_L
+                    ]
+                    t = t_p + t_d
+                    # t_min = [l for l in t ]
+                    E_S.append(self.route_plan["q_S"][t_min, k])
+                    E_W.append(self.route_plan["q_W"][t_min, k])
+                else:
+                    E_S.append(self.route_plan["q_S"][origins[k][1], k])
+                    E_W.append(self.route_plan["q_W"][origins[k][1], k])
 
         # Destinations for each vehicle
         destinations = {}
@@ -211,38 +220,9 @@ class Updater:
                 destinations[k] = ()
 
         for item in sorted(destinations.items()):
-            # if len(item[1]) == 0:
             vehicle_lat_lon.append(
                 (radians(59.946829115276145), radians(10.779841653639243))
             )
-            """
-            NOTE
-            else:
-                if item[1][1] <= self.num_requests - 1:
-                    vehicle_lat_lon.append(
-                        (
-                            np.deg2rad(df.loc[item[1][1], "Origin Lat"]),
-                            np.deg2rad(df.loc[item[1][1], "Origin Lng"]),
-                        )
-                    )
-                else:
-                    vehicle_lat_lon.append(
-                        (
-                            np.deg2rad(
-                                df.loc[
-                                    item[1][1] - self.num_requests,
-                                    "Destination Lat",
-                                ]
-                            ),
-                            np.deg2rad(
-                                df.loc[
-                                    item[1][1] - self.num_requests,
-                                    "Destination Lng",
-                                ]
-                            ),
-                        )
-                    )
-            """
 
         # FIND X-VARIABLES TO FIXATE
         for a in self.route_plan["x"].keys():
@@ -275,7 +255,6 @@ class Updater:
             fixate_x.remove(e)
 
         # need to remove x-variables for vehicles not initially used
-        not_used_vehicles = [k for k in origins.keys() if len(origins[k]) == 0]
         fixate_x = [el for el in fixate_x if el[2] not in not_used_vehicles]
 
         # FIND T-VARIABLES TO FIXATE

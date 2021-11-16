@@ -44,5 +44,5 @@ def get_event(i):
 
 if __name__ == "__main__":
     num_events = 12
-    sleep = 300
+    sleep = 30
     main(num_events, sleep)

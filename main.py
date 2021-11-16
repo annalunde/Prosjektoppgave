@@ -34,7 +34,7 @@ def main(num_events=10, sleep=60):
         reopt_plan = reopt_model.run_model()
         print("Waiting for new request")
         time.sleep(sleep)
-        initia_route_plan = reopt_plan
+        initial_route_plan = reopt_plan
 
 
 def get_event(i):

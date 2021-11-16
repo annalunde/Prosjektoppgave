@@ -3,13 +3,7 @@
 Minimize
  
 Subject To
- TimeWindow2.1[0]: - t[0] + 1.6206408e+09 s[0] <= 0
- TimeWindow2.2[11]: t[11] - 1.6206633e+09 s[11] <= 0
- TimeWindow4[0]: t[0] - t[11] - 7200 s[0] <= -325.300712
- Rejection2[0]: s[0] - s[11] = 0
+ TimeWindow2.1[10]: t[10] >= 1.6334469e+09
 Bounds
- t[0] free
- t[11] free
-Binaries
- s[0] s[11]
+ -infinity <= t[10] <= 1.6206423253007121e+09
 End

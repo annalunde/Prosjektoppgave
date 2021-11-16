@@ -85,7 +85,7 @@ class InitialModel:
     def run_model(self):
         try:
             m = gp.Model("mip1")
-            m.setParam("NumericFocus", 3)
+            m.setParam("NumericFocus", 0)
 
             pickups = [i for i in range(n)]
             dropoffs = [i for i in range(n, 2 * n)]
@@ -111,6 +111,7 @@ class InitialModel:
                     for i in nodes_depots
                     for j in nodes_depots
                     for k in vehicles
+                    if j != (2 * n + k + num_vehicles)
                 )
                 + quicksum(C_T * (l[i] + u[i]) for i in nodes)
                 + quicksum(C_F * d[i] for i in pickups),

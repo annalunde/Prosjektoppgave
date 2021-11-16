@@ -474,12 +474,12 @@ class ReoptModel:
             """
             NOTE
             m.addConstrs(
-                (T_H_L[i].timestamp() * s[i] <= t[i] for i in nodes),
+                (T_H_L[i].timestamp() * (1-s[i]) <= t[i] for i in nodes),
                 name="TimeWindow2.1",
             )
 
             m.addConstrs(
-                (t[i] <= T_H_U[i].timestamp() * s[i] for i in nodes),
+                (t[i] <= T_H_U[i].timestamp() * (1-s[i]) for i in nodes),
                 name="TimeWindow2.2",
             )
             """
@@ -487,12 +487,12 @@ class ReoptModel:
                 (T_H_L[i].timestamp() <= t[i] for i in nodes),
                 name="TimeWindow2.1",
             )
-
+            '''
             m.addConstrs(
                 (t[i] <= T_H_U[i].timestamp() for i in nodes),
                 name="TimeWindow2.2",
             )
-
+            '''
             m.addConstrs(
                 (
                     t[i] + S + T_ij[i][j].total_seconds() - t[j]
@@ -520,7 +520,6 @@ class ReoptModel:
                 (
                     T_O[i] - t[i] == z_plus[i] - z_minus[i]
                     for i in nodes_remaining
-                    for k in vehicles
                 ),
                 name="TimeWindow5",
             )
@@ -554,6 +553,8 @@ class ReoptModel:
 
             # RUN MODEL
             m.optimize()
+            m.computeIIS()
+            m.write("model.ilp")
 
             for i in nodes:
                 print(s[i].varName, s[i].x)

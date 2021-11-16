@@ -24,12 +24,6 @@ class Updater:
         nodes_remaining = []  # set of remaining pick-up and drop-off nodes
         nodes_new = []  # set of new pick-up and drop-off nodes
         nodes = []  # set of all pick-up and drop-off nodes
-        E_S = (
-            []
-        )  # standard seats load of vehicle k in lower time window of rolling horizon
-        E_W = (
-            []
-        )  # wheelchair load of vehickle k in lower time window of rolling horizon
         T_O_t = {}  # time of service of request i in original plan
         vehicle_times = (
             {}
@@ -179,6 +173,7 @@ class Updater:
                     )
             """
 
+<<<<<<< HEAD
         # Loads of each vehicle
         for k in sorted(origins.keys()):
             if (
@@ -190,6 +185,8 @@ class Updater:
                 E_S.append(self.route_plan["q_S"][origins[k][1], k])
                 E_W.append(self.route_plan["q_W"][origins[k][1], k])
 
+=======
+>>>>>>> 0d19c31c59ea076086b996ded8798a34851625de
         # Destinations for each vehicle
         destinations = {}
         for t in vehicle_times.keys():
@@ -343,8 +340,6 @@ class Updater:
             fixate_t,
             origins,
             destinations,
-            E_S,
-            E_W,
             T_O,
             D_ij,
             T_ij,

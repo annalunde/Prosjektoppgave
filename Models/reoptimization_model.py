@@ -3,8 +3,6 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
-
-from models.initial_config import Position
 from models.reoptimization_config import *
 from models.updater_for_reopt import *
 from models.updater_for_reopt import Updater
@@ -118,7 +116,7 @@ class ReoptModel:
 
         try:
             m = gp.Model("mip1")
-            m.setParam("NumericFocus", 3)
+            m.setParam("NumericFocus", 2)
 
             pickups = [i for i in range(self.num_requests)]
             dropoffs = [i for i in range(self.num_requests, 2 * self.num_requests)]
@@ -321,15 +319,6 @@ class ReoptModel:
             )
 
             # STANDARD SEATS CAPACITY CONSTRAINTS
-<<<<<<< HEAD
-
-            m.addConstrs(
-                (q_S[origins[k][1], k] == E_S[k] for k in vehicles),
-                name="SCapacity1",
-            )
-=======
->>>>>>> 0d19c31c59ea076086b996ded8798a34851625de
-
 
             m.addConstrs(
                 (
@@ -395,17 +384,7 @@ class ReoptModel:
             )
 
             # WHEELCHAIR SEATS CAPACITY CONSTRAINTS
-
             m.addConstrs(
-<<<<<<< HEAD
-                (q_W[origins[k][1], k] == E_W[k] for k in vehicles),
-                name="WCapacity1",
-            )
-
-
-            m.addConstrs(
-=======
->>>>>>> 0d19c31c59ea076086b996ded8798a34851625de
                 (
                     q_W[i, k] + L_W[j] - q_W[j, k]
                     <= (Q_W[k] + L_W[j]) * (1 - x[i, j, k])
@@ -415,7 +394,7 @@ class ReoptModel:
                 ),
                 name="WCapacity1",
             )
-
+            #yo alle i hopa
             m.addConstrs(
                 (
                     q_W[i, k] - L_W[j] - q_W[self.num_requests + j, k]
@@ -514,6 +493,7 @@ class ReoptModel:
                 (
                     T_O[i] - t[i] == z_plus[i] - z_minus[i]
                     for i in nodes_remaining
+                    for k in vehicles
                 ),
                 name="TimeWindow5",
             )
@@ -549,6 +529,7 @@ class ReoptModel:
                 print(s[i].varName, s[i].x)
                 if s[i].x > 0.1:
                     print("Your request has been rejected:/")
+                    exit
 
             for v in m.getVars():
                 if v.x > 0:

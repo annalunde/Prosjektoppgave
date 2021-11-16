@@ -25,7 +25,7 @@ F = 0.5
 H = 1
 
 # Big M
-M = timedelta(hours=2).total_seconds()  # in hours
+M = timedelta(hours=3).total_seconds()  # in hours
 
 # Service time
 S = timedelta(minutes=2).total_seconds()

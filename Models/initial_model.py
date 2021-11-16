@@ -85,7 +85,7 @@ class InitialModel:
     def run_model(self):
         try:
             m = gp.Model("mip1")
-            m.setParam("NumericFocus", 0)
+            m.setParam("NumericFocus", 3)
 
             pickups = [i for i in range(n)]
             dropoffs = [i for i in range(n, 2 * n)]
@@ -105,6 +105,21 @@ class InitialModel:
             d = m.addVars(pickups, vtype=GRB.CONTINUOUS, name="d")
 
             # OBJECTIVE FUNCTION
+
+            m.setObjectiveN(1 * quicksum(
+                C_D[k] * D_ij[i][j] * x[i, j, k]
+                for i in nodes_depots
+                for j in nodes_depots
+                for k in vehicles
+                if j != (2 * n + k + num_vehicles)
+            ), index=0)
+
+            m.setObjectiveN(1 * quicksum(C_T * (l[i] + u[i]) for i in nodes)
+                            + 1 * quicksum(C_F * d[i] for i in pickups), index=1)
+
+            m.ModelSense = GRB.MINIMIZE
+
+            '''
             m.setObjective(
                 quicksum(
                     C_D[k] * D_ij[i][j] * x[i, j, k]
@@ -117,6 +132,7 @@ class InitialModel:
                 + quicksum(C_F * d[i] for i in pickups),
                 GRB.MINIMIZE,
             )
+            '''
 
             # FLOW CONSTRAINTS
             m.addConstrs(
@@ -423,7 +439,18 @@ class InitialModel:
             for i in pickups:
                 print(d[i].varName, d[i].x)
 
-            print("Obj: %g" % m.objVal)
+            #print("Obj: %g" % m.objVal)
+
+            obj1 = m.getObjective(index=0)
+            print("Operational costs")
+            print(obj1.getValue())
+            obj2 = m.getObjective(index=1)
+            print("Quality of service")
+            print(obj2.getValue())
+
+            obj3 = obj1.getValue() + obj2.getValue()
+            print("Total")
+            print(obj3)
 
             # self.vizualize_route(results=m.getVars())
 

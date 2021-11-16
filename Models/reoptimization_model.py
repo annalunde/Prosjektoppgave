@@ -157,6 +157,7 @@ class ReoptModel:
                     for i in nodes_depots
                     for j in nodes_depots
                     for k in vehicles
+                    if j != (2 * self.num_requests + k + num_vehicles)
                 )
                 + quicksum(C_T * (l[i] + u[i]) for i in nodes)
                 + quicksum(C_F * d[i] for i in pickups)

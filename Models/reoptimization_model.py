@@ -472,33 +472,17 @@ class ReoptModel:
                 (t[i] <= T_S_U[i].timestamp() + u[i] for i in nodes),
                 name="TimeWindow1.2",
             )
-            """
-<<<<<<< HEAD
-            NOTE
-            m.addConstrs(
-                (T_H_L[i].timestamp() * (1-s[i]) <= t[i] for i in nodes),
-                name="TimeWindow2.1",
-            )
-
-            m.addConstrs(
-                (t[i] <= T_H_U[i].timestamp() * (1-s[i]) for i in nodes),
-                name="TimeWindow2.2",
-            )
-=======
-            NOTE: fjernet alle s i time windows
->>>>>>> d5c3a10aa4f5446af77eb2a71566fc695cc21bdc
-            """
 
             m.addConstrs(
                 (T_H_L[i].timestamp() <= t[i] for i in nodes),
                 name="TimeWindow2.1",
             )
-            '''
+
             m.addConstrs(
                 (t[i] <= T_H_U[i].timestamp() for i in nodes),
                 name="TimeWindow2.2",
             )
-            '''
+
             m.addConstrs(
                 (
                     t[i] + S + T_ij[i][j].total_seconds() - t[j]

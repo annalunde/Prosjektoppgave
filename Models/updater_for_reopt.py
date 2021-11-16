@@ -44,7 +44,7 @@ class Updater:
         # CREATE NEW SETS
         pickups_new.append(self.num_requests - 1)
         nodes_new.append(self.num_requests - 1)
-        nodes_new.append(2 * (self.num_requests - 1))
+        nodes_new.append(2 * (self.num_requests) - 1)
 
         # CREATE ALL SETS
         pickups = [i for i in range(self.num_requests)]
@@ -145,11 +145,13 @@ class Updater:
                 origins[k] = ()
 
         for item in sorted(origins.items()):
-            if len(item[1]) == 0:
-                vehicle_lat_lon.append(
-                    (radians(59.946829115276145), radians(10.779841653639243))
-                )
+            # if len(item[1]) == 0:
 
+            vehicle_lat_lon.append(
+                (radians(59.946829115276145), radians(10.779841653639243))
+            )
+            """
+            NOTE
             else:
                 if item[1][1] <= self.num_requests - 1:
                     vehicle_lat_lon.append(
@@ -175,6 +177,7 @@ class Updater:
                             ),
                         )
                     )
+            """
 
         # Loads of each vehicle
         for k in sorted(origins.keys()):
@@ -208,11 +211,12 @@ class Updater:
                 destinations[k] = ()
 
         for item in sorted(destinations.items()):
-            if len(item[1]) == 0:
-                vehicle_lat_lon.append(
-                    (radians(59.946829115276145), radians(10.779841653639243))
-                )
-
+            # if len(item[1]) == 0:
+            vehicle_lat_lon.append(
+                (radians(59.946829115276145), radians(10.779841653639243))
+            )
+            """
+            NOTE
             else:
                 if item[1][1] <= self.num_requests - 1:
                     vehicle_lat_lon.append(
@@ -238,6 +242,7 @@ class Updater:
                             ),
                         )
                     )
+            """
 
         # FIND X-VARIABLES TO FIXATE
         for a in self.route_plan["x"].keys():
@@ -276,7 +281,14 @@ class Updater:
         # FIND T-VARIABLES TO FIXATE
         for t_i in self.route_plan["t"].keys():
             if pd.to_datetime(self.route_plan["t"][t_i], unit="s") <= time_request_L:
-                fixate_t[t_i] = self.route_plan["t"][t_i]
+                c = None
+                if t_i > self.num_requests - 2:
+                    c = t_i + 1
+                    if t_i >= 2 * (self.num_requests - 1):
+                        c = t_i + 2
+                if not c:
+                    c = t_i
+                fixate_t[c] = self.route_plan["t"][t_i]
 
         # Positions
         lat_lon = request_lat_lon + vehicle_lat_lon

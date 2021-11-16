@@ -6,7 +6,7 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 from math import radians, degrees
-from models.reoptimization_config import *
+from Models.reoptimization_config import *
 from sklearn.metrics.pairwise import haversine_distances
 
 

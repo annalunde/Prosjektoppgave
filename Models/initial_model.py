@@ -3,7 +3,7 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
-from models.initial_config import *
+from Models.initial_config import *
 
 
 class InitialModel:

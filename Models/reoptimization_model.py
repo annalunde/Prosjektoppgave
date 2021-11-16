@@ -3,9 +3,9 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
-from models.reoptimization_config import *
-from models.updater_for_reopt import *
-from models.updater_for_reopt import Updater
+from Models.reoptimization_config import *
+from Models.updater_for_reopt import *
+from Models.updater_for_reopt import Updater
 
 
 class ReoptModel:

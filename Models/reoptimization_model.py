@@ -3,8 +3,6 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
-
-from models.initial_config import Position
 from models.reoptimization_config import *
 from models.updater_for_reopt import *
 from models.updater_for_reopt import Updater
@@ -102,10 +100,6 @@ class ReoptModel:
             nodes,
             fixate_x,
             fixate_t,
-            origins,
-            destinations,
-            E_S,
-            E_W,
             T_O,
             D_ij,
             T_ij,
@@ -116,24 +110,17 @@ class ReoptModel:
             M_ij,
             L_S,
             L_W,
+            f,
         ) = self.updater.update()
 
         try:
             m = gp.Model("mip1")
-            m.setParam("NumericFocus", 3)
+            m.setParam("NumericFocus", 2)
 
             pickups = [i for i in range(self.num_requests)]
             dropoffs = [i for i in range(self.num_requests, 2 * self.num_requests)]
             nodes = [i for i in range(2 * self.num_requests)]
             vehicles = [i for i in range(num_vehicles)]
-
-            for v in origins.keys():
-                if len(origins[v]) == 0:
-                    origins[v] = (0, 2 * (self.num_requests) + v)
-
-            for v in destinations.keys():
-                if len(destinations[v]) == 0:
-                    destinations[v] = (0, 2 * (self.num_requests) + v)
 
             # Create variables
             x = m.addVars(
@@ -241,36 +228,6 @@ class ReoptModel:
                 name="Flow4.2",
             )
 
-            # vehicles cannot drive from origins that are not their own
-            m.addConstrs(
-                (
-                    quicksum(
-                        x[origins[v][1], j, k]
-                        for j in nodes_depots
-                        for k in vehicles
-                        if k != v
-                    )
-                    == 0
-                    for v in vehicles
-                ),
-                name="Flow5.1",
-            )
-
-            # vehicles cannot drive into destinations that are not their own
-            # NOTE
-            m.addConstrs(
-                (
-                    quicksum(
-                        x[i, destinations[v][1], k]
-                        for i in nodes_depots
-                        for k in vehicles
-                        if k != v
-                    )
-                    == 0
-                    for v in vehicles
-                ),
-                name="Flow5.2",
-            )
             # vehicles cannot drive into destinations that are not their own
             m.addConstrs(
                 (
@@ -283,10 +240,9 @@ class ReoptModel:
                     == 0
                     for v in vehicles
                 ),
-                name="Flow5.3",
+                name="Flow5.1",
             )
             # vehicles cannot drive from origins that are not their own
-            # NOTE
             m.addConstrs(
                 (
                     quicksum(
@@ -298,7 +254,7 @@ class ReoptModel:
                     == 0
                     for v in vehicles
                 ),
-                name="Flow5.4",
+                name="Flow5.2",
             )
 
             m.addConstrs(
@@ -324,10 +280,6 @@ class ReoptModel:
             )
 
             # STANDARD SEATS CAPACITY CONSTRAINTS
-            m.addConstrs(
-                (q_S[origins[k][1], k] == E_S[k] for k in vehicles),
-                name="SCapacity1",
-            )
 
             m.addConstrs(
                 (
@@ -337,7 +289,7 @@ class ReoptModel:
                     for i in nodes_depots
                     for k in vehicles
                 ),
-                name="SCapacity2",
+                name="SCapacity1",
             )
 
             m.addConstrs(
@@ -348,7 +300,7 @@ class ReoptModel:
                     for i in nodes_depots
                     for k in vehicles
                 ),
-                name="SCapacity3",
+                name="SCapacity2",
             )
 
             m.addConstrs(
@@ -357,7 +309,7 @@ class ReoptModel:
                     for i in pickups
                     for k in vehicles
                 ),
-                name="SCapacity4.1",
+                name="SCapacity3.1",
             )
 
             m.addConstrs(
@@ -366,7 +318,7 @@ class ReoptModel:
                     for i in pickups
                     for k in vehicles
                 ),
-                name="SCapacity4.2",
+                name="SCapacity3.2",
             )
 
             m.addConstrs(
@@ -394,11 +346,6 @@ class ReoptModel:
 
             # WHEELCHAIR SEATS CAPACITY CONSTRAINTS
             m.addConstrs(
-                (q_W[origins[k][1], k] == E_W[k] for k in vehicles),
-                name="WCapacity1",
-            )
-
-            m.addConstrs(
                 (
                     q_W[i, k] + L_W[j] - q_W[j, k]
                     <= (Q_W[k] + L_W[j]) * (1 - x[i, j, k])
@@ -406,7 +353,7 @@ class ReoptModel:
                     for i in nodes_depots
                     for k in vehicles
                 ),
-                name="WCapacity2",
+                name="WCapacity1",
             )
 
             m.addConstrs(
@@ -417,7 +364,7 @@ class ReoptModel:
                     for i in nodes_depots
                     for k in vehicles
                 ),
-                name="WCapacity3",
+                name="WCapacity2",
             )
 
             m.addConstrs(
@@ -426,7 +373,7 @@ class ReoptModel:
                     for i in pickups
                     for k in vehicles
                 ),
-                name="WCapacity4.1",
+                name="WCapacity3.1",
             )
 
             m.addConstrs(
@@ -435,7 +382,7 @@ class ReoptModel:
                     for i in pickups
                     for k in vehicles
                 ),
-                name="WCapacity4.2",
+                name="WCapacity3.2",
             )
 
             m.addConstrs(
@@ -448,7 +395,7 @@ class ReoptModel:
                     for i in pickups
                     for k in vehicles
                 ),
-                name="WCapacity5",
+                name="WCapacity4",
             )
 
             m.addConstrs(
@@ -472,33 +419,17 @@ class ReoptModel:
                 (t[i] <= T_S_U[i].timestamp() + u[i] for i in nodes),
                 name="TimeWindow1.2",
             )
-            """
-<<<<<<< HEAD
-            NOTE
-            m.addConstrs(
-                (T_H_L[i].timestamp() * (1-s[i]) <= t[i] for i in nodes),
-                name="TimeWindow2.1",
-            )
-
-            m.addConstrs(
-                (t[i] <= T_H_U[i].timestamp() * (1-s[i]) for i in nodes),
-                name="TimeWindow2.2",
-            )
-=======
-            NOTE: fjernet alle s i time windows
->>>>>>> d5c3a10aa4f5446af77eb2a71566fc695cc21bdc
-            """
 
             m.addConstrs(
                 (T_H_L[i].timestamp() <= t[i] for i in nodes),
                 name="TimeWindow2.1",
             )
-            '''
+
             m.addConstrs(
                 (t[i] <= T_H_U[i].timestamp() for i in nodes),
                 name="TimeWindow2.2",
             )
-            '''
+
             m.addConstrs(
                 (
                     t[i] + S + T_ij[i][j].total_seconds() - t[j]
@@ -523,6 +454,7 @@ class ReoptModel:
                 (
                     T_O[i] - t[i] == z_plus[i] - z_minus[i]
                     for i in nodes_remaining
+                    for k in vehicles
                 ),
                 name="TimeWindow5",
             )
@@ -549,18 +481,16 @@ class ReoptModel:
                 name="Rejection1",
             )
 
-            "NOTE: fjernet rejection 2"
-
             # RUN MODEL
             m.optimize()
-            # m.computeIIS()
-            # m.write("model.ilp")
 
             for i in pickups_new:
                 print(s[i].varName, s[i].x)
                 if s[i].x > 0.1:
                     print("Your request has been rejected:/")
-                    exit
+                    df = pd.read_csv(f)
+                    df.drop(df.tail(1).index, inplace=True)
+                    df.to_csv(f)
 
             for v in m.getVars():
                 if v.x > 0:

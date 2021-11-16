@@ -51,11 +51,13 @@ class Updater:
             df = pd.read_csv(config("data_path_test"), nrows=self.num_requests - 1)
             df = df.append(self.event, ignore_index=True)
             df.to_csv(f"data_requests_for:{self.num_requests}.csv")
+            f = None
 
         else:
             df = pd.read_csv(f"data_requests_for:{self.num_requests-1}.csv")
             df = df.append(self.event, ignore_index=True)
             df.to_csv(f"data_requests_for:{self.num_requests}.csv")
+            f = f"data_requests_for:{self.num_requests}.csv"
 
         # CREATE REMAINING SETS
         time_now = pd.to_datetime(self.event["Request Creation Time"])
@@ -118,34 +120,14 @@ class Updater:
 
         vehicle_lat_lon = []
 
-        # Origins for each vehicle
-        origins = {}
-        for t in vehicle_times.keys():
-            for a in self.route_plan["x"].keys():
-                if a[1] == t and self.route_plan["x"][a] == 1:
-                    v = a[2]
-            if v not in origins.keys():
-                r = t if t < self.num_requests - 1 else t + 1
-                r = t + 2 if t >= 2 * (self.num_requests - 1) else r
-                origins[v] = (vehicle_times[t], r)
-            else:
-                if vehicle_times[t] < origins[v][0]:
-                    r = t if t < self.num_requests - 1 else t + 1
-                    r = t + 2 if t >= 2 * (self.num_requests - 1) else r
-                    origins[v] = (vehicle_times[t], r)
-        for k in vehicles:
-            # A vehicle might not be used
-            if k not in origins.keys():
-                origins[k] = ()
-
-        for item in sorted(origins.items()):
+        for item in range(num_vehicles):
             vehicle_lat_lon.append(
                 (radians(59.946829115276145), radians(10.779841653639243))
             )
 
         not_used_vehicles = [
             k
-            for k in origins.keys()
+            for k in vehicles
             if self.route_plan["x"][
                 (
                     2 * (self.num_requests - 1) + k,
@@ -156,27 +138,7 @@ class Updater:
             == 1
         ]
 
-        # Destinations for each vehicle
-        destinations = {}
-        for t in vehicle_times.keys():
-            for a in self.route_plan["x"].keys():
-                if a[1] == t and self.route_plan["x"][a] == 1:
-                    v = a[2]
-            if v not in destinations.keys():
-                r = t if t < self.num_requests - 1 else t + 1
-                r = t + 2 if t >= 2 * (self.num_requests - 1) else r
-                destinations[v] = (vehicle_times[t], r)
-            else:
-                if vehicle_times[t] > destinations[v][0]:
-                    r = t if t < self.num_requests - 1 else t + 1
-                    r = t + 2 if t >= 2 * (self.num_requests - 1) else r
-                    destinations[v] = (vehicle_times[t], r)
-        for k in vehicles:
-            # A vehicle might not be used
-            if k not in destinations.keys():
-                destinations[k] = ()
-
-        for item in sorted(destinations.items()):
+        for item in range(num_vehicles):
             vehicle_lat_lon.append(
                 (radians(59.946829115276145), radians(10.779841653639243))
             )
@@ -277,8 +239,6 @@ class Updater:
             nodes,
             fixate_x,
             fixate_t,
-            origins,
-            destinations,
             T_O,
             D_ij,
             T_ij,
@@ -289,4 +249,5 @@ class Updater:
             M_ij,
             L_S,
             L_W,
+            f,
         )

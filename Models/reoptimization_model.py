@@ -100,8 +100,6 @@ class ReoptModel:
             nodes,
             fixate_x,
             fixate_t,
-            origins,
-            destinations,
             T_O,
             D_ij,
             T_ij,
@@ -112,6 +110,7 @@ class ReoptModel:
             M_ij,
             L_S,
             L_W,
+            f,
         ) = self.updater.update()
 
         try:
@@ -122,14 +121,6 @@ class ReoptModel:
             dropoffs = [i for i in range(self.num_requests, 2 * self.num_requests)]
             nodes = [i for i in range(2 * self.num_requests)]
             vehicles = [i for i in range(num_vehicles)]
-
-            for v in origins.keys():
-                if len(origins[v]) == 0:
-                    origins[v] = (0, 2 * (self.num_requests) + v)
-
-            for v in destinations.keys():
-                if len(destinations[v]) == 0:
-                    destinations[v] = (0, 2 * (self.num_requests) + v)
 
             # Create variables
             x = m.addVars(
@@ -237,35 +228,6 @@ class ReoptModel:
                 name="Flow4.2",
             )
 
-            # vehicles cannot drive from origins that are not their own
-            m.addConstrs(
-                (
-                    quicksum(
-                        x[origins[v][1], j, k]
-                        for j in nodes_depots
-                        for k in vehicles
-                        if k != v
-                    )
-                    == 0
-                    for v in vehicles
-                ),
-                name="Flow5.1",
-            )
-
-            # vehicles cannot drive into destinations that are not their own
-            m.addConstrs(
-                (
-                    quicksum(
-                        x[i, destinations[v][1], k]
-                        for i in nodes_depots
-                        for k in vehicles
-                        if k != v
-                    )
-                    == 0
-                    for v in vehicles
-                ),
-                name="Flow5.2",
-            )
             # vehicles cannot drive into destinations that are not their own
             m.addConstrs(
                 (
@@ -278,10 +240,9 @@ class ReoptModel:
                     == 0
                     for v in vehicles
                 ),
-                name="Flow5.3",
+                name="Flow5.1",
             )
             # vehicles cannot drive from origins that are not their own
-            # NOTE
             m.addConstrs(
                 (
                     quicksum(
@@ -293,7 +254,7 @@ class ReoptModel:
                     == 0
                     for v in vehicles
                 ),
-                name="Flow5.4",
+                name="Flow5.2",
             )
 
             m.addConstrs(
@@ -522,14 +483,14 @@ class ReoptModel:
 
             # RUN MODEL
             m.optimize()
-            # m.computeIIS()
-            # m.write("model.ilp")
 
             for i in pickups_new:
                 print(s[i].varName, s[i].x)
                 if s[i].x > 0.1:
                     print("Your request has been rejected:/")
-                    exit
+                    df = pd.read_csv(f)
+                    df.drop(df.tail(1).index, inplace=True)
+                    df.to_csv(f)
 
             for v in m.getVars():
                 if v.x > 0:

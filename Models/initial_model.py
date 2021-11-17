@@ -423,6 +423,8 @@ class InitialModel:
             m.optimize()
 
             for v in m.getVars():
+                if v.varName.startswith("t"):
+                    continue
                 if v.x > 0:
                     print("%s %g" % (v.varName, v.x))
 

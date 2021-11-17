@@ -9,12 +9,14 @@ from models.updater_for_reopt import Updater
 
 
 class ReoptModel:
-    def __init__(self, current_route_plan, event, num_requests, first):
+    def __init__(self, current_route_plan, event, num_requests, first, rejected):
         self.model = "MIP 1"
         self.route_plan = current_route_plan
         self.event = event
         self.num_requests = num_requests
-        self.updater = Updater(self.route_plan, self.event, self.num_requests, first)
+        self.updater = Updater(
+            self.route_plan, self.event, self.num_requests, first, rejected
+        )
 
     def vizualize_route(self, results, num_nodes_and_depots):
         dot = graphviz.Digraph(engine="neato")
@@ -110,11 +112,12 @@ class ReoptModel:
             M_ij,
             L_S,
             L_W,
+            rejected,
         ) = self.updater.update()
 
         try:
             m = gp.Model("mip1")
-            m.setParam("NumericFocus", 2)
+            m.setParam("NumericFocus", 3)
 
             pickups = [i for i in range(self.num_requests)]
             dropoffs = [i for i in range(self.num_requests, 2 * self.num_requests)]
@@ -487,8 +490,11 @@ class ReoptModel:
                 print(s[i].varName, s[i].x)
                 if s[i].x > 0.1:
                     print("Your request has been rejected:/")
+                    rejected.append(i)
 
             for v in m.getVars():
+                if v.varName.startswith("t"):
+                    continue
                 if v.x > 0:
                     print("%s %g" % (v.varName, v.x))
 
@@ -513,7 +519,7 @@ class ReoptModel:
             route_plan["q_S"] = {k: v.X for k, v in q_S.items()}
             route_plan["q_W"] = {k: v.X for k, v in q_W.items()}
 
-            return route_plan
+            return route_plan, rejected
 
         except GurobiError as e:
             print("Error reported")

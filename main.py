@@ -19,10 +19,11 @@ def main(num_events=10, sleep=60):
     """
 
     # Initial Route Plan
-    print("Running initial model")
+    print("Running Initial Model")
     init_model = InitialModel()
     initial_route_plan = init_model.run_model()
     num_requests = init_model.get_n()
+    rejected = []
 
     # Event Based Rerouting
     for i in range(num_events):
@@ -30,8 +31,10 @@ def main(num_events=10, sleep=60):
         first = True if i == 0 else False
         event = get_event(i)
         num_requests += 1
-        reopt_model = ReoptModel(initial_route_plan, event, num_requests, first)
-        reopt_plan = reopt_model.run_model()
+        reopt_model = ReoptModel(
+            initial_route_plan, event, num_requests, first, rejected
+        )
+        reopt_plan, rejected = reopt_model.run_model()
         print("Waiting for new request")
         time.sleep(sleep)
         initial_route_plan = reopt_plan

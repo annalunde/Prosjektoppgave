@@ -110,7 +110,6 @@ class ReoptModel:
             M_ij,
             L_S,
             L_W,
-            f,
         ) = self.updater.update()
 
         try:
@@ -488,9 +487,6 @@ class ReoptModel:
                 print(s[i].varName, s[i].x)
                 if s[i].x > 0.1:
                     print("Your request has been rejected:/")
-                    df = pd.read_csv(f)
-                    df.drop(df.tail(1).index, inplace=True)
-                    df.to_csv(f)
 
             for v in m.getVars():
                 if v.x > 0:

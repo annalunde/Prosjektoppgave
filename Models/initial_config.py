@@ -4,12 +4,15 @@ from math import radians, degrees
 from decouple import config
 import numpy as np
 from datetime import datetime, timedelta
+from models.reoptimization_config import *
+
 
 # Sets
 n = 10  # number of pickup nodes
-num_vehicles = 3
 num_nodes = 2 * n
-num_nodes_and_depots = 2 * num_vehicles + 2 * n
+num_nodes_and_depots = (
+    2 * num_vehicles + 2 * n
+)  # num_vehicles is fetched from reopt config
 
 # Costs and penalties
 C_D = [1, 1, 1, 1, 1, 1]  # per vehicle

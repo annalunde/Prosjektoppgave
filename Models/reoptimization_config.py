@@ -2,17 +2,19 @@
 import numpy as np
 from datetime import datetime, timedelta
 from scipy.spatial import distance
+from models.initial_config import *
+
 
 # Vehicles
-num_vehicles = 3  # NOTE: cannot be set lower than initial config num_vehicles
+num_vehicles = 3  # this also gives the number of vehicles for initial model
 
 # Costs and penalties
 C_D = [1, 1, 1, 1, 1, 1]  # per vehicle
-C_F = 1
-C_T = 1
-C_R = 10000  # lost revenue from not serving a request
-C_K = [100, 100, 100, 100, 100]  # cost of using vehicle k
-C_O = 1  # cost of deviation from original plan
+C_F = 1 / 60
+C_T = 1 / 60
+C_R = 100  # lost revenue from not serving a request
+C_K = [9, 9, 9, 9, 9]  # cost of using vehicle k
+C_O = 1 / 60  # cost of deviation from original plan
 
 # Capacity per vehicle
 Q_S = [10, 10, 10, 10]

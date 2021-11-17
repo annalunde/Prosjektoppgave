@@ -151,6 +151,7 @@ class ReoptModel:
                 + quicksum(C_T * (l[i] + u[i]) for i in nodes)
                 + quicksum(C_F * d[i] for i in pickups)
                 + quicksum(C_R * s[i] for i in pickups_new)
+                + (C_R * len(rejected))
                 + quicksum(C_K[k] * y[k] for k in vehicles)
                 + quicksum(C_O * (z_plus[i] + z_minus[i]) for i in nodes_remaining),
                 GRB.MINIMIZE,

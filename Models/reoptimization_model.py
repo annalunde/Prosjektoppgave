@@ -142,7 +142,7 @@ class ReoptModel:
             # OBJECTIVE FUNCTION
             m.setObjective(
                 quicksum(
-                    C_D[k] * D_ij[i][j] * x[i, j, k]
+                    C_D * D_ij[i][j] * x[i, j, k]
                     for i in nodes_depots
                     for j in nodes_depots
                     for k in vehicles
@@ -152,7 +152,7 @@ class ReoptModel:
                 + quicksum(C_F * d[i] for i in pickups)
                 + quicksum(C_R * s[i] for i in pickups_new)
                 + (C_R * len(rejected))
-                + quicksum(C_K[k] * y[k] for k in vehicles)
+                + quicksum(C_K * y[k] for k in vehicles)
                 + quicksum(C_O * (z_plus[i] + z_minus[i]) for i in nodes_remaining),
                 GRB.MINIMIZE,
             )
@@ -286,8 +286,7 @@ class ReoptModel:
 
             m.addConstrs(
                 (
-                    q_S[i, k] + L_S[j] - q_S[j, k]
-                    <= (Q_S[k] + L_S[j]) * (1 - x[i, j, k])
+                    q_S[i, k] + L_S[j] - q_S[j, k] <= (Q_S + L_S[j]) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -298,7 +297,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     q_S[i, k] - L_S[j] - q_S[self.num_requests + j, k]
-                    <= Q_S[k] * (1 - x[i, self.num_requests + j, k])
+                    <= Q_S * (1 - x[i, self.num_requests + j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -317,7 +316,7 @@ class ReoptModel:
 
             m.addConstrs(
                 (
-                    q_S[i, k] <= quicksum(Q_S[k] * x[i, j, k] for j in nodes_depots)
+                    q_S[i, k] <= quicksum(Q_S * x[i, j, k] for j in nodes_depots)
                     for i in pickups
                     for k in vehicles
                 ),
@@ -327,7 +326,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     quicksum(
-                        (Q_S[k] - L_S[i]) * x[self.num_requests + i, j, k]
+                        (Q_S - L_S[i]) * x[self.num_requests + i, j, k]
                         for j in nodes_depots
                     )
                     >= q_S[self.num_requests + i, k]
@@ -340,7 +339,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     q_S[i, k]
-                    <= Q_S[k] * (1 - x[i, 2 * self.num_requests + k + num_vehicles, k])
+                    <= Q_S * (1 - x[i, 2 * self.num_requests + k + num_vehicles, k])
                     for i in dropoffs
                     for k in vehicles
                 ),
@@ -350,8 +349,7 @@ class ReoptModel:
             # WHEELCHAIR SEATS CAPACITY CONSTRAINTS
             m.addConstrs(
                 (
-                    q_W[i, k] + L_W[j] - q_W[j, k]
-                    <= (Q_W[k] + L_W[j]) * (1 - x[i, j, k])
+                    q_W[i, k] + L_W[j] - q_W[j, k] <= (Q_W + L_W[j]) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -362,7 +360,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     q_W[i, k] - L_W[j] - q_W[self.num_requests + j, k]
-                    <= Q_W[k] * (1 - x[i, self.num_requests + j, k])
+                    <= Q_W * (1 - x[i, self.num_requests + j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -381,7 +379,7 @@ class ReoptModel:
 
             m.addConstrs(
                 (
-                    q_W[i, k] <= quicksum(Q_W[k] * x[i, j, k] for j in nodes_depots)
+                    q_W[i, k] <= quicksum(Q_W * x[i, j, k] for j in nodes_depots)
                     for i in pickups
                     for k in vehicles
                 ),
@@ -391,7 +389,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     quicksum(
-                        (Q_W[k] - L_W[i]) * x[self.num_requests + i, j, k]
+                        (Q_W - L_W[i]) * x[self.num_requests + i, j, k]
                         for j in nodes_depots
                     )
                     >= q_W[self.num_requests + i, k]
@@ -404,7 +402,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     q_W[i, k]
-                    <= Q_W[k] * (1 - x[i, 2 * self.num_requests + k + num_vehicles, k])
+                    <= Q_W * (1 - x[i, 2 * self.num_requests + k + num_vehicles, k])
                     for i in dropoffs
                     for k in vehicles
                 ),
@@ -485,6 +483,10 @@ class ReoptModel:
             )
 
             # RUN MODEL
+            m.tune()
+            for i in range(m.tuneResultCount):
+                m.getTuneResult(i)
+                m.write("tune" + str(i) + ".prm")
             m.optimize()
 
             for i in pickups_new:
@@ -520,7 +522,22 @@ class ReoptModel:
             route_plan["q_S"] = {k: v.X for k, v in q_S.items()}
             route_plan["q_W"] = {k: v.X for k, v in q_W.items()}
 
-            return route_plan, rejected
+            num_not_used_vehicles = len(
+                [
+                    k
+                    for k in vehicles
+                    if route_plan["x"][
+                        (
+                            2 * (self.num_requests - 1) + k,
+                            2 * (self.num_requests - 1) + k + num_vehicles,
+                            k,
+                        )
+                    ]
+                    == 1
+                ]
+            )
+
+            return route_plan, rejected, num_not_used_vehicles
 
         except GurobiError as e:
             print("Error reported")

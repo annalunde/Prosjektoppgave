@@ -6,28 +6,25 @@ from models.initial_config import *
 
 
 # Vehicles
-num_vehicles = 3  # this also gives the number of vehicles for initial model
+num_vehicles = 5  # this also gives the number of vehicles for initial model
 
 # Costs and penalties
-C_D = [1, 1, 1, 1, 1, 1]  # per vehicle
+C_D = 1  # per vehicle
 C_F = 1 / 60
 C_T = 1 / 60
-C_R = 100  # lost revenue from not serving a request
-C_K = [9, 9, 9, 9, 9]  # cost of using vehicle k
+C_R = 40  # lost revenue from not serving a request
+C_K = 35  # cost of using vehicle k
 C_O = 1 / 60  # cost of deviation from original plan
 
 # Capacity per vehicle
-Q_S = [10, 10, 10, 10]
-Q_W = [1, 1, 1, 1]
+Q_S = 6
+Q_W = 1
 
 # Allowed excess ride time
 F = 0.5
 
 # Number of hours to open to reoptimize
 H = 1
-
-# Big M
-M = timedelta(hours=2).total_seconds()  # in hours
 
 # Service time
 S = timedelta(minutes=2).total_seconds()

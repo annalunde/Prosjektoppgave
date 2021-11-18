@@ -15,13 +15,13 @@ num_nodes_and_depots = (
 )  # num_vehicles is fetched from reopt config
 
 # Costs and penalties
-C_D = [1, 1, 1, 1, 1, 1]  # per vehicle
-C_F = 1
-C_T = 1
+C_D = 1  # per vehicle
+C_F = 1 / 60
+C_T = 1 / 60
 
 # Capacity per vehicle
-Q_S = [10, 10, 10, 10]
-Q_W = [1, 1, 1, 1]
+Q_S = 6
+Q_W = 1
 
 # Allowed excess ride time
 F = 0.5
@@ -87,7 +87,6 @@ for i in range(num_nodes):
     for j in range(num_nodes):
         M_ij[i][j] = T_H_U[i] + T_ij[i][j] - T_H_L[j]
 
-M = timedelta(hours=2).total_seconds()  # in hours
 
 # Service time
 S = timedelta(minutes=2).total_seconds()

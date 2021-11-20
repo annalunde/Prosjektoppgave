@@ -84,19 +84,19 @@ class Updater:
                 T_O_t[t_i + 1] = self.route_plan["t"][t_i]
 
             if (
-                pd.to_datetime(self.route_plan["t"][t_i], unit="s") < time_request_U
-                and pd.to_datetime(self.route_plan["t"][t_i], unit="s") > time_request_L
+                pd.to_datetime(self.route_plan["t"][t_i], unit="h") < time_request_U
+                and pd.to_datetime(self.route_plan["t"][t_i], unit="h") > time_request_L
             ):
                 if t_i < self.num_requests - 1:
                     pickups_remaining.append(t_i)
                     nodes_remaining.append(t_i)
                     vehicle_times[t_i] = pd.to_datetime(
-                        self.route_plan["t"][t_i], unit="s"
+                        self.route_plan["t"][t_i], unit="h"
                     )
                 else:
                     nodes_remaining.append(t_i + 1)
                     vehicle_times[t_i] = pd.to_datetime(
-                        self.route_plan["t"][t_i], unit="s"
+                        self.route_plan["t"][t_i], unit="h"
                     )
         filter_rejected = []
         for j in nodes_remaining:
@@ -190,7 +190,10 @@ class Updater:
 
         # FIND T-VARIABLES TO FIXATE
         for t_i in self.route_plan["t"].keys():
-            if pd.to_datetime(self.route_plan["t"][t_i], unit="s") <= time_request_L:
+            if (
+                pd.to_datetime(self.route_plan["t"][t_i], unit="h") <= time_request_L
+                and t_i not in self.rejected
+            ):
                 c = None
                 if t_i > self.num_requests - 2:
                     c = t_i + 1
@@ -215,7 +218,9 @@ class Updater:
 
         for i in range(self.num_nodes_and_depots):
             for j in range(self.num_nodes_and_depots):
-                T_ij[i][j] = timedelta(hours=(D_ij[i][j] / speed))
+                T_ij[i][j] = (
+                    timedelta(hours=(D_ij[i][j] / speed)).total_seconds() / 3600
+                )
 
         # Time windows
         T_S_L = (
@@ -234,6 +239,10 @@ class Updater:
             pd.to_datetime(df["T_H_U_P"]).tolist()
             + pd.to_datetime(df["T_H_U_D"]).tolist()
         )
+        T_S_L = [i.timestamp() / 3600 for i in T_S_L]
+        T_S_U = [i.timestamp() / 3600 for i in T_S_U]
+        T_H_L = [i.timestamp() / 3600 for i in T_H_L]
+        T_H_U = [i.timestamp() / 3600 for i in T_H_U]
 
         # Big M
         M_ij = np.empty(shape=(self.num_nodes, self.num_nodes), dtype=datetime)

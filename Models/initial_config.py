@@ -16,8 +16,8 @@ num_nodes_and_depots = (
 
 # Costs and penalties
 C_D = 1  # per vehicle
-C_F = 1 / 60
-C_T = 1 / 60
+C_F = 60
+C_T = 60
 
 # Capacity per vehicle
 Q_S = 5
@@ -74,13 +74,19 @@ T_ij = np.empty(shape=(num_nodes_and_depots, num_nodes_and_depots), dtype=timede
 
 for i in range(num_nodes_and_depots):
     for j in range(num_nodes_and_depots):
-        T_ij[i][j] = timedelta(hours=(D_ij[i][j] / speed))
+        T_ij[i][j] = timedelta(hours=(D_ij[i][j] / speed)).total_seconds() / 3600
 
 # Time windows
 T_S_L = pd.to_datetime(df["T_S_L_P"]).tolist() + pd.to_datetime(df["T_S_L_D"]).tolist()
 T_S_U = pd.to_datetime(df["T_S_U_P"]).tolist() + pd.to_datetime(df["T_S_U_D"]).tolist()
 T_H_L = pd.to_datetime(df["T_H_L_P"]).tolist() + pd.to_datetime(df["T_H_L_D"]).tolist()
 T_H_U = pd.to_datetime(df["T_H_U_P"]).tolist() + pd.to_datetime(df["T_H_U_D"]).tolist()
+
+T_S_L = [i.timestamp() / 3600 for i in T_S_L]
+T_S_U = [i.timestamp() / 3600 for i in T_S_U]
+T_H_L = [i.timestamp() / 3600 for i in T_H_L]
+T_H_U = [i.timestamp() / 3600 for i in T_H_U]
+
 
 # Big M
 M_ij = np.empty(shape=(num_nodes, num_nodes), dtype=datetime)
@@ -90,4 +96,4 @@ for i in range(num_nodes):
 
 
 # Service time
-S = timedelta(minutes=2).total_seconds()
+S = timedelta(minutes=2).total_seconds() / 3600

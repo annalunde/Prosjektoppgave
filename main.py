@@ -88,7 +88,7 @@ def get_event(i, tuning):
 
 
 if __name__ == "__main__":
-    num_events = 5
+    num_events = 1
     sleep = 1
     start_time = datetime.now()
     tuning = True

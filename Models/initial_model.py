@@ -354,29 +354,28 @@ class InitialModel:
             # TIME WINDOW CONSTRAINTS
 
             m.addConstrs(
-                (T_S_L[i].timestamp() - l[i] <= t[i] for i in nodes),
+                (T_S_L[i] - l[i] <= t[i] for i in nodes),
                 name="TimeWindow1.1",
             )
 
             m.addConstrs(
-                (t[i] <= T_S_U[i].timestamp() + u[i] for i in nodes),
+                (t[i] <= T_S_U[i] + u[i] for i in nodes),
                 name="TimeWindow1.2",
             )
 
             m.addConstrs(
-                (T_H_L[i].timestamp() <= t[i] for i in nodes),
+                (T_H_L[i] <= t[i] for i in nodes),
                 name="TimeWindow2.1",
             )
 
             m.addConstrs(
-                (t[i] <= T_H_U[i].timestamp() for i in nodes),
+                (t[i] <= T_H_U[i] for i in nodes),
                 name="TimeWindow2.2",
             )
 
             m.addConstrs(
                 (
-                    t[i] + S + T_ij[i][j].total_seconds() - t[j]
-                    <= M_ij[i][j].total_seconds() * (1 - x[i, j, k])
+                    t[i] + S + T_ij[i][j] - t[j] <= M_ij[i][j] * (1 - x[i, j, k])
                     for i in nodes
                     for j in nodes
                     for k in vehicles
@@ -385,19 +384,13 @@ class InitialModel:
             )
 
             m.addConstrs(
-                (
-                    t[i] + S + T_ij[i][n + i].total_seconds() - t[n + i] <= 0
-                    for i in pickups
-                ),
+                (t[i] + S + T_ij[i][n + i] - t[n + i] <= 0 for i in pickups),
                 name="TimeWindow4",
             )
 
             # RIDE TIME CONSTRAINTS
             m.addConstrs(
-                (
-                    d[i] >= t[n + i] - (t[i] + (1 + F) * T_ij[i][n + i].total_seconds())
-                    for i in pickups
-                ),
+                (d[i] >= t[n + i] - (t[i] + (1 + F) * T_ij[i][n + i]) for i in pickups),
                 name="RideTime1",
             )
 
@@ -413,7 +406,9 @@ class InitialModel:
             for i in nodes:
                 print(
                     t[i].varName,
-                    datetime.utcfromtimestamp(t[i].x).strftime("%Y-%m-%d %H:%M:%S"),
+                    datetime.utcfromtimestamp(t[i].x * 3600).strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    ),
                 )
 
             for i in nodes:

@@ -5,6 +5,7 @@ __pycache__/
 
 # Visualize
 route.gv.pdf
+solution_time.png
 
 # Data
 Data/

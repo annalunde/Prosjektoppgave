@@ -85,7 +85,7 @@ class InitialModel:
     def run_model(self):
         try:
             m = gp.Model("mip1")
-            m.setParam("NumericFocus", 3)
+            m.setParam("NumericFocus", 1)
 
             pickups = [i for i in range(n)]
             dropoffs = [i for i in range(n, 2 * n)]
@@ -106,23 +106,23 @@ class InitialModel:
 
             # OBJECTIVE FUNCTION
 
-            m.setObjectiveN(0.87 * quicksum(
-                C_D[k] * D_ij[i][j] * x[i, j, k]
+            m.setObjectiveN(0.5 * quicksum(
+                C_D * D_ij[i][j] * x[i, j, k]
                 for i in nodes_depots
                 for j in nodes_depots
                 for k in vehicles
                 if j != (2 * n + k + num_vehicles)
             ), index=0)
 
-            m.setObjectiveN(0.13 * quicksum(C_T * (l[i] + u[i]) for i in nodes)
-                            + 0.13* quicksum(C_F * d[i] for i in pickups), index=1)
+            m.setObjectiveN(0.5 * quicksum(C_T * (l[i] + u[i]) for i in nodes)
+                            + 0.5 * quicksum(C_F * d[i] for i in pickups), index=1)
 
             m.ModelSense = GRB.MINIMIZE
 
             '''
             m.setObjective(
                 quicksum(
-                    C_D[k] * D_ij[i][j] * x[i, j, k]
+                    C_D * D_ij[i][j] * x[i, j, k]
                     for i in nodes_depots
                     for j in nodes_depots
                     for k in vehicles
@@ -249,8 +249,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_S[i, k] + L_S[j] - q_S[j, k]
-                    <= (Q_S[k] + L_S[j]) * (1 - x[i, j, k])
+                    q_S[i, k] + L_S[j] - q_S[j, k] <= (Q_S + L_S[j]) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -260,7 +259,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S[k] * (1 - x[i, n + j, k])
+                    q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S * (1 - x[i, n + j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -279,7 +278,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_S[i, k] <= quicksum(Q_S[k] * x[i, j, k] for j in nodes_depots)
+                    q_S[i, k] <= quicksum(Q_S * x[i, j, k] for j in nodes_depots)
                     for i in pickups
                     for k in vehicles
                 ),
@@ -288,7 +287,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    quicksum((Q_S[k] - L_S[i]) * x[n + i, j, k] for j in nodes_depots)
+                    quicksum((Q_S - L_S[i]) * x[n + i, j, k] for j in nodes_depots)
                     >= q_S[n + i, k]
                     for i in pickups
                     for k in vehicles
@@ -298,7 +297,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_S[i, k] <= Q_S[k] * (1 - x[i, 2 * n + k + num_vehicles, k])
+                    q_S[i, k] <= Q_S * (1 - x[i, 2 * n + k + num_vehicles, k])
                     for i in dropoffs
                     for k in vehicles
                 ),
@@ -313,8 +312,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_W[i, k] + L_W[j] - q_W[j, k]
-                    <= (Q_W[k] + L_W[j]) * (1 - x[i, j, k])
+                    q_W[i, k] + L_W[j] - q_W[j, k] <= (Q_W + L_W[j]) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -324,7 +322,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, n + j, k])
+                    q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W * (1 - x[i, n + j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -343,7 +341,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_W[i, k] <= quicksum(Q_W[k] * x[i, j, k] for j in nodes_depots)
+                    q_W[i, k] <= quicksum(Q_W * x[i, j, k] for j in nodes_depots)
                     for i in pickups
                     for k in vehicles
                 ),
@@ -352,7 +350,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    quicksum((Q_W[k] - L_W[i]) * x[n + i, j, k] for j in nodes_depots)
+                    quicksum((Q_W - L_W[i]) * x[n + i, j, k] for j in nodes_depots)
                     >= q_W[n + i, k]
                     for i in pickups
                     for k in vehicles
@@ -362,7 +360,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_W[i, k] <= Q_W[k] * (1 - x[i, 2 * n + k + num_vehicles, k])
+                    q_W[i, k] <= Q_W * (1 - x[i, 2 * n + k + num_vehicles, k])
                     for i in dropoffs
                     for k in vehicles
                 ),
@@ -372,29 +370,29 @@ class InitialModel:
             # TIME WINDOW CONSTRAINTS
 
             m.addConstrs(
-                (T_S_L[i].timestamp() - l[i] <= t[i] for i in nodes),
+                (T_S_L[i] - l[i] <= t[i] for i in nodes),
                 name="TimeWindow1.1",
             )
 
             m.addConstrs(
-                (t[i] <= T_S_U[i].timestamp() + u[i] for i in nodes),
+                (t[i] <= T_S_U[i] + u[i] for i in nodes),
                 name="TimeWindow1.2",
             )
 
             m.addConstrs(
-                (T_H_L[i].timestamp() <= t[i] for i in nodes),
+                (T_H_L[i] <= t[i] for i in nodes),
                 name="TimeWindow2.1",
             )
 
             m.addConstrs(
-                (t[i] <= T_H_U[i].timestamp() for i in nodes),
+                (t[i] <= T_H_U[i] for i in nodes),
                 name="TimeWindow2.2",
             )
 
             m.addConstrs(
                 (
-                    t[i] + S + T_ij[i][j].total_seconds() - t[j]
-                    <= M_ij[i][j].total_seconds() * (1 - x[i, j, k])
+                    t[i] + S + T_ij[i][j] - t[j]
+                    <= M_ij[i][j] * (1 - x[i, j, k])
                     for i in nodes
                     for j in nodes
                     for k in vehicles
@@ -404,7 +402,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    t[i] + S + T_ij[i][n + i].total_seconds() - t[n + i] <= 0
+                    t[i] + S + T_ij[i][n + i] - t[n + i] <= 0
                     for i in pickups
                 ),
                 name="TimeWindow4",
@@ -413,7 +411,7 @@ class InitialModel:
             # RIDE TIME CONSTRAINTS
             m.addConstrs(
                 (
-                    d[i] >= t[n + i] - (t[i] + (1 + F) * T_ij[i][n + i].total_seconds())
+                    d[i] >= t[n + i] - (t[i] + (1 + F) * T_ij[i][n + i])
                     for i in pickups
                 ),
                 name="RideTime1",
@@ -423,13 +421,15 @@ class InitialModel:
             m.optimize()
 
             for v in m.getVars():
+                if v.varName.startswith("t"):
+                    continue
                 if v.x > 0:
                     print("%s %g" % (v.varName, v.x))
 
             for i in nodes:
                 print(
                     t[i].varName,
-                    datetime.utcfromtimestamp(t[i].x).strftime("%Y-%m-%d %H:%M:%S"),
+                    datetime.utcfromtimestamp(t[i].x*3600).strftime("%Y-%m-%d %H:%M:%S"),
                 )
 
             for i in nodes:

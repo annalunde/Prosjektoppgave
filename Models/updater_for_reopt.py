@@ -11,11 +11,12 @@ from sklearn.metrics.pairwise import haversine_distances
 
 
 class Updater:
-    def __init__(self, current_route_plan, event, num_requests, first):
+    def __init__(self, current_route_plan, event, num_requests, first, rejected):
         self.route_plan = current_route_plan  # dictionary with variable values
         self.event = event  # dataframe row
         self.num_requests = num_requests
         self.first = first
+        self.rejected = rejected
 
     def update(self):
         pickups_remaining = []  # set of remaining pick-up nodes
@@ -47,17 +48,19 @@ class Updater:
         nodes_depots = [i for i in range(self.num_nodes_and_depots)]
 
         # FETCH DATA
-        if self.first:
-            df = pd.read_csv(config("data_path_test"), nrows=self.num_requests - 1)
+        if self.first:  # NOTE
+            df = pd.read_csv(
+                config("data_path_test_tuning"), nrows=self.num_requests - 1
+            )
             df = df.append(self.event, ignore_index=True)
-            df.to_csv(f"data_requests_for:{self.num_requests}.csv")
-            f = None
+            df.to_csv(f"Data/Running/data_requests_for:{self.num_requests}.csv")
 
         else:
-            df = pd.read_csv(f"data_requests_for:{self.num_requests-1}.csv")
+            df = pd.read_csv(
+                f"Data/Running/data_requests_for:{self.num_requests-1}.csv"
+            )
             df = df.append(self.event, ignore_index=True)
-            df.to_csv(f"data_requests_for:{self.num_requests}.csv")
-            f = f"data_requests_for:{self.num_requests}.csv"
+            df.to_csv(f"Data/Running/data_requests_for:{self.num_requests}.csv")
 
         # CREATE REMAINING SETS
         time_now = pd.to_datetime(self.event["Request Creation Time"])
@@ -95,6 +98,15 @@ class Updater:
                     vehicle_times[t_i] = pd.to_datetime(
                         self.route_plan["t"][t_i], unit="s"
                     )
+        filter_rejected = []
+        for j in nodes_remaining:
+            if j in self.rejected:
+                filter_rejected.append(j)
+
+        for h in filter_rejected:
+            nodes_remaining.remove(h)
+            nodes_remaining.remove(h + self.num_requests)
+            pickups_remaining.remove(h)
 
         for i in nodes_new:
             T_O_t[i] = -1
@@ -249,5 +261,5 @@ class Updater:
             M_ij,
             L_S,
             L_W,
-            f,
+            self.rejected,
         )

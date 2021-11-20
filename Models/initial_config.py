@@ -4,27 +4,32 @@ from math import radians, degrees
 from decouple import config
 import numpy as np
 from datetime import datetime, timedelta
+from reoptimization_config import *
+
 
 # Sets
 n = 15  # number of pickup nodes
-num_vehicles = 3
 num_nodes = 2 * n
-num_nodes_and_depots = 2 * num_vehicles + 2 * n
+num_nodes_and_depots = (
+    2 * num_vehicles + 2 * n
+)  # num_vehicles is fetched from reopt config
 
 # Costs and penalties
-C_D = [1, 1, 1, 1, 1, 1]  # per vehicle
-C_F = 1/60
-C_T = 1/60
+C_D = 1  # per vehicle
+C_F = 60
+C_T = 60
 
 # Capacity per vehicle
-Q_S = [5, 5, 5, 5]
-Q_W = [1, 1, 1, 1]
+Q_S = 5
+Q_W = 1
 
 # Allowed excess ride time
 F = 0.5
 
 # Different parameters per node
 df = pd.read_csv(config("data_path_tuning"), nrows=n)
+# NOTE
+
 
 # Load for each request
 L_S = df["Number of Passengers"].tolist()
@@ -61,7 +66,6 @@ Position = request_lat_lon_deg + vehicle_lat_lon_deg
 
 # Distance matrix
 D_ij = haversine_distances(lat_lon, lat_lon) * 6371
-print(D_ij[10][13]+D_ij[8][15]+D_ij[9][14])
 
 # Travel time matrix
 speed = 40
@@ -70,10 +74,7 @@ T_ij = np.empty(shape=(num_nodes_and_depots, num_nodes_and_depots), dtype=timede
 
 for i in range(num_nodes_and_depots):
     for j in range(num_nodes_and_depots):
-        T_ij[i][j] = timedelta(hours=(D_ij[i][j] / speed))
-
-# Service time
-S = timedelta(minutes=2).total_seconds()
+        T_ij[i][j] = timedelta(hours=(D_ij[i][j] / speed)).total_seconds()/3600
 
 # Time windows
 T_S_L = pd.to_datetime(df["T_S_L_P"]).tolist() + pd.to_datetime(df["T_S_L_D"]).tolist()
@@ -81,14 +82,22 @@ T_S_U = pd.to_datetime(df["T_S_U_P"]).tolist() + pd.to_datetime(df["T_S_U_D"]).t
 T_H_L = pd.to_datetime(df["T_H_L_P"]).tolist() + pd.to_datetime(df["T_H_L_D"]).tolist()
 T_H_U = pd.to_datetime(df["T_H_U_P"]).tolist() + pd.to_datetime(df["T_H_U_D"]).tolist()
 
+
+T_S_L = [i.timestamp()/3600 for i in T_S_L]
+T_S_U = [i.timestamp()/3600for i in T_S_U]
+T_H_L = [i.timestamp()/3600 for i in T_H_L]
+T_H_U = [i.timestamp()/3600 for i in T_H_U]
+
+
 # Big M
-# dette må ses på - noen blir negative
 M_ij = np.empty(shape=(num_nodes, num_nodes), dtype=datetime)
 for i in range(num_nodes):
     for j in range(num_nodes):
-        M_ij[i][j] = T_H_U[i] + T_ij[i][j] - T_H_L[j]
+        M_ij[i][j] = (T_H_U[i] + T_ij[i][j] - T_H_L[j])
+        #M_ij[i][j] = (T_H_U[i] + T_ij[i][j] - T_H_L[j]).total_seconds()/3600 #nytt
 
-M = timedelta(hours=2).total_seconds()  # in hours
 
 # Service time
-S = timedelta(minutes=2).total_seconds()
+#S = timedelta(minutes=2).total_seconds()
+
+S = timedelta(minutes=2).total_seconds()/3600 #nytt

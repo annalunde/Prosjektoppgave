@@ -81,18 +81,18 @@ class ModelPreprocessor:
             )
         ]
 
-        # Filter out the requests that arrived after 9 o'clock of the specific date and return these
-        time = datetime(date[0], date[1], date[2], 9)
+        # Filter out the requests that arrived after 8 o'clock of the specific date and return these
+        time = datetime(date[0], date[1], date[2], 8)
 
-        df_filtered_after_9 = df_filtered[
+        df_filtered_after_8 = df_filtered[
             (df_filtered["Request Creation Time"] >= time)
         ]
 
-        return df_filtered_after_9
+        return df_filtered_after_8
 
     def add_time_windows(self, df, filename):
         df["T_S_L_P"] = (df["Requested Pickup Time"] - timedelta(minutes=5)).fillna(
-            df["Requested Dropoff Time"] - timedelta(hours=6)
+            df["Requested Dropoff Time"] - timedelta(hours=2)
         )
         df["T_S_L_D"] = (df["Requested Dropoff Time"] - timedelta(minutes=5)).fillna(
             df["Requested Pickup Time"] - timedelta(minutes=15)
@@ -101,10 +101,10 @@ class ModelPreprocessor:
             df["Requested Dropoff Time"] + timedelta(minutes=15)
         )
         df["T_S_U_D"] = (df["Requested Dropoff Time"] + timedelta(minutes=5)).fillna(
-            df["Requested Pickup Time"] + timedelta(hours=6)
+            df["Requested Pickup Time"] + timedelta(hours=2)
         )
         df["T_H_L_P"] = (df["Requested Pickup Time"] - timedelta(minutes=15)).fillna(
-            df["Requested Dropoff Time"] - timedelta(hours=6)
+            df["Requested Dropoff Time"] - timedelta(hours=2)
         )
         df["T_H_L_D"] = (df["Requested Dropoff Time"] - timedelta(minutes=15)).fillna(
             df["Requested Pickup Time"] - timedelta(minutes=15)
@@ -113,7 +113,7 @@ class ModelPreprocessor:
             df["Requested Dropoff Time"] - timedelta(minutes=15)
         )
         df["T_H_U_D"] = (df["Requested Dropoff Time"] + timedelta(minutes=15)).fillna(
-            df["Requested Pickup Time"] + timedelta(hours=6)
+            df["Requested Pickup Time"] + timedelta(hours=2)
         )
 
         df.to_csv(filename)
@@ -130,14 +130,14 @@ def main():
             date=[2021, 5, 10]
         )
         preprocessor.add_time_windows(
-            initial_model_data, filename="test_data_initial_model.csv"
+            initial_model_data, filename="../Data/Test/test_data_initial_model.csv"
         )
 
         reopt_model_data = preprocessor.process_RAT_events_for_reoptimization_model(
             date=[2021, 5, 10]
         )
         preprocessor.add_time_windows(
-            reopt_model_data, filename="test_data_events.csv"
+            reopt_model_data, filename="../Data/Test/test_data_events.csv"
         )
 
     except Exception as e:

@@ -8,7 +8,7 @@ from models.reoptimization_config import *
 
 
 # Sets
-n = 10  # number of pickup nodes
+n = 15  # number of pickup nodes
 num_nodes = 2 * n
 num_nodes_and_depots = (
     2 * num_vehicles + 2 * n
@@ -20,14 +20,16 @@ C_F = 1 / 60
 C_T = 1 / 60
 
 # Capacity per vehicle
-Q_S = 6
+Q_S = 5
 Q_W = 1
 
 # Allowed excess ride time
 F = 0.5
 
 # Different parameters per node
-df = pd.read_csv(config("data_path_test"), nrows=n)
+df = pd.read_csv(config("data_path_test_tuning"), nrows=n)
+# NOTE
+
 
 # Load for each request
 L_S = df["Number of Passengers"].tolist()
@@ -81,7 +83,6 @@ T_H_L = pd.to_datetime(df["T_H_L_P"]).tolist() + pd.to_datetime(df["T_H_L_D"]).t
 T_H_U = pd.to_datetime(df["T_H_U_P"]).tolist() + pd.to_datetime(df["T_H_U_D"]).tolist()
 
 # Big M
-# dette må ses på - noen blir negative
 M_ij = np.empty(shape=(num_nodes, num_nodes), dtype=datetime)
 for i in range(num_nodes):
     for j in range(num_nodes):

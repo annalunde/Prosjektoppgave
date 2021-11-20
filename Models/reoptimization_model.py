@@ -483,10 +483,9 @@ class ReoptModel:
             )
 
             # RUN MODEL
-            m.tune()
-            for i in range(m.tuneResultCount):
-                m.getTuneResult(i)
-                m.write("tune" + str(i) + ".prm")
+
+            print("HELLOOLOLOLOLO")
+            print(len(nodes_remaining))
             m.optimize()
 
             for i in pickups_new:

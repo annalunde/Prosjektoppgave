@@ -85,13 +85,14 @@ class InitialModel:
     def run_model(self):
         try:
             m = gp.Model("mip1")
+            m.setParam("NumericFocus", 3)
 
             pickups = [i for i in range(n)]
             dropoffs = [i for i in range(n, 2 * n)]
             nodes = [i for i in range(2 * n)]
             nodes_depots = [i for i in range(num_nodes_and_depots)]
             vehicles = [i for i in range(num_vehicles)]
-            
+
             # Create variables
             x = m.addVars(
                 nodes_depots, nodes_depots, vehicles, vtype=GRB.BINARY, name="x"
@@ -232,8 +233,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_S[i, k] + L_S[j] - q_S[j, k]
-                    <= (Q_S + L_S[j]) * (1 - x[i, j, k])
+                    q_S[i, k] + L_S[j] - q_S[j, k] <= (Q_S + L_S[j]) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -296,8 +296,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_W[i, k] + L_W[j] - q_W[j, k]
-                    <= (Q_W + L_W[j]) * (1 - x[i, j, k])
+                    q_W[i, k] + L_W[j] - q_W[j, k] <= (Q_W + L_W[j]) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles

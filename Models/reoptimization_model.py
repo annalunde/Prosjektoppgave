@@ -157,6 +157,71 @@ class ReoptModel:
                 GRB.MINIMIZE,
             )
 
+            # ARC ELIMINATION
+            # cannot drive from pick-up nodes to destinations
+            for v in vehicles:
+                for k in vehicles:
+                    for i in pickups:
+                        x[i, 2 * self.num_requests + v + num_vehicles, k].lb = 0
+                        x[i, 2 * self.num_requests + v + num_vehicles, k].ub = 0
+
+            # cannot drive from origins to drop-offs
+            for v in vehicles:
+                for k in vehicles:
+                    for j in dropoffs:
+                        x[2 * self.num_requests + v, j, k].lb = 0
+                        x[2 * self.num_requests + v, j, k].ub = 0
+
+            # cannot drive from own drop-off to own pick-up
+            for k in vehicles:
+                for i in pickups:
+                    x[self.num_requests + i, i, k].lb = 0
+                    x[self.num_requests + i, i, k].ub = 0
+
+            # cannot drive from itself to itself
+            for k in vehicles:
+                for i in pickups:
+                    x[i, i, k].lb = 0
+                    x[i, i, k].ub = 0
+
+            # cannot drive into an origin
+            for v in vehicles:
+                for k in vehicles:
+                    for i in nodes_depots:
+                        x[i, 2 * self.num_requests + v, k].lb = 0
+                        x[i, 2 * self.num_requests + v, k].ub = 0
+
+            # cannot drive from a destination
+            for v in vehicles:
+                for k in vehicles:
+                    for j in nodes_depots:
+                        x[2 * self.num_requests + v + num_vehicles, j, k].lb = 0
+                        x[2 * self.num_requests + v + num_vehicles, j, k].ub = 0
+
+            # cannot drive from origins that are not their own
+            for v in vehicles:
+                for k in vehicles:
+                    if k != v:
+                        for j in nodes_depots:
+                            x[2 * self.num_requests + v, j, k].lb = 0
+                            x[2 * self.num_requests + v, j, k].ub = 0
+
+            # cannot drive into destinations that are not their own
+            for v in vehicles:
+                for k in vehicles:
+                    if k != v:
+                        for i in nodes_depots:
+                            x[i, 2 * self.num_requests + v + num_vehicles, k].lb = 0
+                            x[i, 2 * self.num_requests + v + num_vehicles, k].ub = 0
+
+            # not add arc if vehicle cannot reach node j from node i within the time window of j
+            for k in vehicles:
+                for i in nodes:
+                    for j in nodes:
+                        if T_H_L[i] + S + T_ij[i][j] > T_H_U[j]:
+                            x[i, j, k].lb = 0
+                            x[i, j, k].ub = 0
+
             # FIXATING VALUES
 
             # x values - outside time window
@@ -177,11 +242,12 @@ class ReoptModel:
                 ),
                 name="Flow1",
             )
-
+            '''
             m.addConstrs(
                 (x[i, i, k] == 0 for i in nodes_depots for k in vehicles),
                 name="Flow2",
             )
+            '''
             m.addConstrs(
                 (
                     quicksum(x[2 * self.num_requests + k, j, k] for j in nodes_depots)
@@ -202,7 +268,7 @@ class ReoptModel:
                 ),
                 name="Flow3.2",
             )
-
+            '''
             # vehicles cannot drive into an origin
             m.addConstrs(
                 (
@@ -259,7 +325,7 @@ class ReoptModel:
                 ),
                 name="Flow5.2",
             )
-
+            '''
             m.addConstrs(
                 (
                     quicksum(x[i, j, k] for j in nodes_depots)
@@ -483,7 +549,6 @@ class ReoptModel:
 
             # RUN MODEL
 
-            print("HELLOOLOLOLOLO")
             print(len(nodes_remaining))
             m.optimize()
 

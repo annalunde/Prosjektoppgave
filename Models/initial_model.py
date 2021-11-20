@@ -557,8 +557,9 @@ class InitialModel:
             for i in pickups:
                 print(d[i].varName, d[i].x)
 
-            #print("Obj: %g" % m.objVal)
+            print("Obj: %g" % m.objVal)
 
+            '''
             obj1 = m.getObjective(index=0)
             print("Operational costs")
             print(obj1.getValue())
@@ -569,6 +570,7 @@ class InitialModel:
             obj3 = obj1.getValue() + obj2.getValue()
             print("Total")
             print(obj3)
+            '''
 
             # self.vizualize_route(results=m.getVars())
 

@@ -7,9 +7,9 @@ from gurobipy import GurobiError
 from gurobipy import quicksum
 from decouple import config
 from datetime import datetime, timedelta
-from models import *
-from models.initial_model import InitialModel
-from models.reoptimization_model import ReoptModel
+from Models import *
+from Models.initial_model import InitialModel
+from Models.reoptimization_model import ReoptModel
 
 
 def main(num_events, sleep, start_time, tuning):
@@ -88,7 +88,7 @@ def get_event(i, tuning):
 
 
 if __name__ == "__main__":
-    num_events = 1
+    num_events = 5
     sleep = 1
     start_time = datetime.now()
     tuning = True

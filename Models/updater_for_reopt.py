@@ -53,14 +53,14 @@ class Updater:
                 config("data_path_test_tuning"), nrows=self.num_requests - 1
             )
             df = df.append(self.event, ignore_index=True)
-            df.to_csv(f"Data/Running/data_requests_for:{self.num_requests}.csv")
+            df.to_csv("data_requests_for:"+str(self.num_requests)+".csv")
 
         else:
             df = pd.read_csv(
-                f"Data/Running/data_requests_for:{self.num_requests-1}.csv"
+                "data_requests_for:" + str(self.num_requests - 1) + ".csv"
             )
             df = df.append(self.event, ignore_index=True)
-            df.to_csv(f"Data/Running/data_requests_for:{self.num_requests}.csv")
+            df.to_csv("data_requests_for:"+str(self.num_requests)+".csv")
 
         # CREATE REMAINING SETS
         time_now = pd.to_datetime(self.event["Request Creation Time"])

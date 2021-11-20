@@ -122,7 +122,7 @@ class InitialModel:
             '''
             m.setObjective(
                 quicksum(
-                    C_D[k] * D_ij[i][j] * x[i, j, k]
+                    C_D * D_ij[i][j] * x[i, j, k]
                     for i in nodes_depots
                     for j in nodes_depots
                     for k in vehicles
@@ -249,8 +249,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_S[i, k] + L_S[j] - q_S[j, k]
-                    <= (Q_S[k] + L_S[j]) * (1 - x[i, j, k])
+                    q_S[i, k] + L_S[j] - q_S[j, k] <= (Q_S + L_S[j]) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -260,7 +259,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S[k] * (1 - x[i, n + j, k])
+                    q_S[i, k] - L_S[j] - q_S[n + j, k] <= Q_S * (1 - x[i, n + j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -279,7 +278,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_S[i, k] <= quicksum(Q_S[k] * x[i, j, k] for j in nodes_depots)
+                    q_S[i, k] <= quicksum(Q_S * x[i, j, k] for j in nodes_depots)
                     for i in pickups
                     for k in vehicles
                 ),
@@ -288,7 +287,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    quicksum((Q_S[k] - L_S[i]) * x[n + i, j, k] for j in nodes_depots)
+                    quicksum((Q_S - L_S[i]) * x[n + i, j, k] for j in nodes_depots)
                     >= q_S[n + i, k]
                     for i in pickups
                     for k in vehicles
@@ -298,7 +297,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_S[i, k] <= Q_S[k] * (1 - x[i, 2 * n + k + num_vehicles, k])
+                    q_S[i, k] <= Q_S * (1 - x[i, 2 * n + k + num_vehicles, k])
                     for i in dropoffs
                     for k in vehicles
                 ),
@@ -313,8 +312,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_W[i, k] + L_W[j] - q_W[j, k]
-                    <= (Q_W[k] + L_W[j]) * (1 - x[i, j, k])
+                    q_W[i, k] + L_W[j] - q_W[j, k] <= (Q_W + L_W[j]) * (1 - x[i, j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -324,7 +322,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W[k] * (1 - x[i, n + j, k])
+                    q_W[i, k] - L_W[j] - q_W[n + j, k] <= Q_W * (1 - x[i, n + j, k])
                     for j in pickups
                     for i in nodes_depots
                     for k in vehicles
@@ -343,7 +341,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_W[i, k] <= quicksum(Q_W[k] * x[i, j, k] for j in nodes_depots)
+                    q_W[i, k] <= quicksum(Q_W * x[i, j, k] for j in nodes_depots)
                     for i in pickups
                     for k in vehicles
                 ),
@@ -352,7 +350,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    quicksum((Q_W[k] - L_W[i]) * x[n + i, j, k] for j in nodes_depots)
+                    quicksum((Q_W - L_W[i]) * x[n + i, j, k] for j in nodes_depots)
                     >= q_W[n + i, k]
                     for i in pickups
                     for k in vehicles
@@ -362,7 +360,7 @@ class InitialModel:
 
             m.addConstrs(
                 (
-                    q_W[i, k] <= Q_W[k] * (1 - x[i, 2 * n + k + num_vehicles, k])
+                    q_W[i, k] <= Q_W * (1 - x[i, 2 * n + k + num_vehicles, k])
                     for i in dropoffs
                     for k in vehicles
                 ),

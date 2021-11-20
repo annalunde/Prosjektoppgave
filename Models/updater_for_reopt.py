@@ -48,8 +48,10 @@ class Updater:
         nodes_depots = [i for i in range(self.num_nodes_and_depots)]
 
         # FETCH DATA
-        if self.first:
-            df = pd.read_csv(config("data_path_test"), nrows=self.num_requests - 1)
+        if self.first:  # NOTE
+            df = pd.read_csv(
+                config("data_path_test_tuning"), nrows=self.num_requests - 1
+            )
             df = df.append(self.event, ignore_index=True)
             df.to_csv(f"Data/Running/data_requests_for:{self.num_requests}.csv")
 
@@ -96,13 +98,15 @@ class Updater:
                     vehicle_times[t_i] = pd.to_datetime(
                         self.route_plan["t"][t_i], unit="s"
                     )
+        filter_rejected = []
         for j in nodes_remaining:
             if j in self.rejected:
-                nodes_remaining.remove(j)
-                nodes_remaining.remove(j + self.num_requests)
-        for h in pickups_remaining:
-            if h in self.rejected:
-                pickups_remaining.remove(h)
+                filter_rejected.append(j)
+
+        for h in filter_rejected:
+            nodes_remaining.remove(h)
+            nodes_remaining.remove(h + self.num_requests)
+            pickups_remaining.remove(h)
 
         for i in nodes_new:
             T_O_t[i] = -1

@@ -106,7 +106,7 @@ class InitialModel:
 
             # OBJECTIVE FUNCTION
 
-            m.setObjectiveN(0.9 * quicksum(
+            m.setObjectiveN(0.87 * quicksum(
                 C_D[k] * D_ij[i][j] * x[i, j, k]
                 for i in nodes_depots
                 for j in nodes_depots
@@ -114,8 +114,8 @@ class InitialModel:
                 if j != (2 * n + k + num_vehicles)
             ), index=0)
 
-            m.setObjectiveN(0.1 * quicksum(C_T * (l[i] + u[i]) for i in nodes)
-                            + 0.1 * quicksum(C_F * d[i] for i in pickups), index=1)
+            m.setObjectiveN(0.13 * quicksum(C_T * (l[i] + u[i]) for i in nodes)
+                            + 0.13* quicksum(C_F * d[i] for i in pickups), index=1)
 
             m.ModelSense = GRB.MINIMIZE
 

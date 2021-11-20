@@ -120,6 +120,11 @@ class ReoptModel:
             m.setParam("NumericFocus", 3)
 
             pickups = [i for i in range(self.num_requests)]
+            pickups_previous = [i for i in range(len(pickups)-1)]
+            pickups_previous_not_rejected = []
+            for i in pickups_previous:
+                if i not in rejected:
+                    pickups_previous_not_rejected.append(i)
             dropoffs = [i for i in range(self.num_requests, 2 * self.num_requests)]
             nodes = [i for i in range(2 * self.num_requests)]
             vehicles = [i for i in range(num_vehicles)]
@@ -134,7 +139,7 @@ class ReoptModel:
             l = m.addVars(nodes, name="l")
             u = m.addVars(nodes, name="u")
             d = m.addVars(pickups, name="d")
-            s = m.addVars(pickups_new, vtype=GRB.BINARY, name="s")
+            s = m.addVars(pickups, vtype=GRB.BINARY, name="s")
             z_plus = m.addVars(nodes_remaining, name="z+")
             z_minus = m.addVars(nodes_remaining, name="z-")
             y = m.addVars(vehicles, vtype=GRB.BINARY, name="y")
@@ -150,8 +155,7 @@ class ReoptModel:
                 )
                 + quicksum(C_T * (l[i] + u[i]) for i in nodes)
                 + quicksum(C_F * d[i] for i in pickups)
-                + quicksum(C_R * s[i] for i in pickups_new)
-                + (C_R * len(rejected))
+                + quicksum(C_R * s[i] for i in pickups)
                 + quicksum(C_K * y[k] for k in vehicles)
                 + quicksum(C_O * (z_plus[i] + z_minus[i]) for i in nodes_remaining),
                 GRB.MINIMIZE,
@@ -233,6 +237,11 @@ class ReoptModel:
             for f_t in fixate_t:
                 t[f_t].lb = fixate_t[f_t]
                 t[f_t].ub = fixate_t[f_t]
+
+            # rejected requests in previous plans
+            for i in rejected:
+                s[i].lb = 1
+                s[i].ub = 1
 
             # FLOW CONSTRAINTS
             m.addConstrs(
@@ -526,14 +535,33 @@ class ReoptModel:
             )
 
             # RIDE TIME CONSTRAINTS
+            '''
             m.addConstrs(
                 (
                     d[i]
                     >= t[self.num_requests + i]
                     - (t[i] + (1 + F) * T_ij[i][self.num_requests + i])
-                    for i in pickups
+                    for i in pickups_remaining
                 ),
                 name="RideTime1",
+            )
+            '''
+
+            m.addConstrs(
+                (
+                    d[i]
+                    >= t[self.num_requests + i]
+                    - (t[i] + (1 + F + s[i]*10) * T_ij[i][self.num_requests + i])
+                    for i in pickups
+                ),
+                name="RideTimeTest",
+            )
+
+            m.addConstr(
+                (
+                    quicksum(s[i] for i in pickups_previous_not_rejected) == 0
+                ),
+                name="RideTimeTest2",
             )
 
             # REJECTION CONSTRAINTS

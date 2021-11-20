@@ -26,6 +26,9 @@ Q_W = 1
 # Allowed excess ride time
 F = 0.5
 
+# Weighting of Operational Costs vs Quality of Service
+alpha = 0.5
+
 # Different parameters per node
 df = pd.read_csv(config("data_path_test_tuning"), nrows=n)
 # NOTE

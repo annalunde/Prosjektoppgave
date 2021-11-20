@@ -105,18 +105,28 @@ class InitialModel:
             d = m.addVars(pickups, vtype=GRB.CONTINUOUS, name="d")
 
             # OBJECTIVE FUNCTION
-            m.setObjective(
-                quicksum(
+
+            m.setObjectiveN(
+                alpha
+                * quicksum(
                     C_D * D_ij[i][j] * x[i, j, k]
                     for i in nodes_depots
                     for j in nodes_depots
                     for k in vehicles
                     if j != (2 * n + k + num_vehicles)
-                )
-                + quicksum(C_T * (l[i] + u[i]) for i in nodes)
-                + quicksum(C_F * d[i] for i in pickups),
-                GRB.MINIMIZE,
+                ),
+                index=0,
             )
+            m.setObjectiveN(
+                (1 - alpha)
+                * (
+                    quicksum(C_T * (l[i] + u[i]) for i in nodes)
+                    + quicksum(C_F * d[i] for i in pickups)
+                ),
+                index=1,
+            )
+
+            m.ModelSense = GRB.MINIMIZE
 
             # FLOW CONSTRAINTS
             m.addConstrs(

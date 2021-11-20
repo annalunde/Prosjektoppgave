@@ -23,6 +23,9 @@ Q_W = 1
 # Allowed excess ride time
 F = 0.5
 
+# Weighting of Operational Costs vs Quality of Service
+beta = 0.5
+
 # Number of hours to open to reoptimize
 H = 0.5
 

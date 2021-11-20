@@ -4,6 +4,7 @@ from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
 from Models.initial_config import *
+from Models.reoptimization_config import num_vehicles
 
 
 class InitialModel:
@@ -133,6 +134,13 @@ class InitialModel:
                 GRB.MINIMIZE,
             )
 
+            # ARC ELIMINATION
+            # cannot drive from pick-up nodes to destinations
+            for v in vehicles:
+                for k in vehicles:
+                    for i in pickups:
+                        x[i, 2 * n + v + num_vehicles, k].lb = 0
+                        x[i, 2 * n + v + num_vehicles, k].ub = 0
 
             # FLOW CONSTRAINTS
             m.addConstrs(
@@ -416,6 +424,94 @@ class InitialModel:
                 ),
                 name="RideTime1",
             )
+
+            # ARC ELIMINATION
+            '''
+            m.addConstr(
+                (
+                    quicksum(x[i, 2 * n + k + num_vehicles, k]
+                    for i in pickups
+                    for k in vehicles)
+                    == 0
+                ),
+                name="ArcElimination1",
+            )
+
+            m.addConstrs(
+                (
+                    x[i, j, k]*(T_H_L[i].timestamp() + S + T_ij[i][j].total_seconds())
+                    <= x[i, j, k]*T_H_U[j].timestamp()
+                    for i in nodes
+                    for j in nodes
+                    for k in vehicles
+                ),
+                name="ArcElimination2",
+            )
+
+            m.addConstr(
+                (
+                    quicksum(x[2 * n + k, j, k]
+                    for j in dropoffs
+                    for k in vehicles)
+                    == 0
+                ),
+                name="ArcElimination3",
+            )
+            '''
+
+            # VALID INEQUALITIES
+            m.addConstr(
+                (
+                    quicksum(
+                        x[i, j, k]
+                        for i in nodes
+                        for j in nodes
+                        for k in vehicles
+                    )
+                    <= num_nodes_and_depots + num_vehicles
+                ),
+                name="ValidInequality1"
+            )
+
+            # SUBTOUR ELIMINATION SIZE 2
+            subtour = []
+            for i in nodes:
+                for j in nodes:
+                    if i < j:
+                        counter = 1
+                        subtour.append(i)
+                        subtour.append(j)
+
+                        m.addConstr(
+                            (
+                                quicksum(x[i, j, k] for i in subtour for j in subtour for k in vehicles)
+                                <= len(subtour) - 1
+                        ),
+                        name = "Subtour"+str(counter)
+                        )
+                        subtour = []
+
+
+            # SUBTOUR ELIMINATION SIZE 3
+            subtour = []
+            for i in nodes:
+                for j in nodes:
+                    for e in nodes:
+                        if i < j and j < e:
+                            counter = 1
+                            subtour.append(i)
+                            subtour.append(j)
+                            subtour.append(e)
+
+                            m.addConstr(
+                                (
+                                        quicksum(x[i, j, k] for i in subtour for j in subtour for k in vehicles)
+                                        <= len(subtour) - 1
+                                ),
+                                name="Subtour" + str(counter)
+                            )
+                            subtour = []
+
 
             # RUN MODEL
             m.optimize()

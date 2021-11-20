@@ -105,7 +105,8 @@ class Updater:
 
         for h in filter_rejected:
             nodes_remaining.remove(h)
-            nodes_remaining.remove(h + self.num_requests)
+            if (h + self.num_requests) in nodes_remaining:
+                nodes_remaining.remove(h + self.num_requests)
             pickups_remaining.remove(h)
 
         for i in nodes_new:

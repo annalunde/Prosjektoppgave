@@ -154,8 +154,7 @@ class ReoptModel:
                 ),
                 index=0,
             )
-            print(type(z_plus[0]))
-            print(type(C_O))
+
             m.setObjectiveN(
                 (1 - beta)
                 * (
@@ -517,7 +516,15 @@ class ReoptModel:
                     ),
                 )
 
-            print("Obj: %g" % m.objVal)
+            # print("Obj: %g" % m.objVal)
+
+            obj1 = m.getObjective(index=0)
+            print("Operational costs: ", obj1.getValue())
+            obj2 = m.getObjective(index=1)
+            print("Quality of service: ", obj2.getValue())
+
+            obj3 = obj1.getValue() + obj2.getValue()
+            print("Total: ", obj3)
 
             """
             NOTE

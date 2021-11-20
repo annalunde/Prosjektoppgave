@@ -6,7 +6,7 @@ from models.initial_config import *
 
 
 # Vehicles
-num_vehicles = 5  # this also gives the number of vehicles for initial model
+num_vehicles = 3  # this also gives the number of vehicles for initial model
 
 # Costs and penalties
 C_D = 1  # per vehicle
@@ -24,7 +24,7 @@ Q_W = 1
 F = 0.5
 
 # Weighting of Operational Costs vs Quality of Service
-beta = 0.5
+beta = 0.2
 
 # Number of hours to open to reoptimize
 H = 0.5

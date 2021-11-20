@@ -142,6 +142,63 @@ class InitialModel:
                         x[i, 2 * n + v + num_vehicles, k].lb = 0
                         x[i, 2 * n + v + num_vehicles, k].ub = 0
 
+            # cannot drive from origins to drop-offs
+            for v in vehicles:
+                for k in vehicles:
+                    for j in dropoffs:
+                        x[2 * n + v, j, k].lb = 0
+                        x[2 * n + v, j, k].ub = 0
+
+            # cannot drive from own drop-off to own pick-up
+            for k in vehicles:
+                for i in pickups:
+                    x[n + i, i, k].lb = 0
+                    x[n + i, i, k].ub = 0
+
+            # cannot drive from itself to itself
+            for k in vehicles:
+                for i in pickups:
+                    x[i, i, k].lb = 0
+                    x[i, i, k].ub = 0
+
+            # cannot drive into an origin
+            for v in vehicles:
+                for k in vehicles:
+                    for i in nodes_depots:
+                        x[i, 2 * n + v, k].lb = 0
+                        x[i, 2 * n + v, k].ub = 0
+
+            # cannot drive from a destination
+            for v in vehicles:
+                for k in vehicles:
+                    for j in nodes_depots:
+                        x[2 * n + v + num_vehicles, j, k].lb = 0
+                        x[2 * n + v + num_vehicles, j, k].ub = 0
+
+            # cannot drive from origins that are not their own
+            for v in vehicles:
+                for k in vehicles:
+                    if k != v:
+                        for j in nodes_depots:
+                            x[2 * n + v, j, k].lb = 0
+                            x[2 * n + v, j, k].ub = 0
+
+            # cannot drive into destinations that are not their own
+            for v in vehicles:
+                for k in vehicles:
+                    if k != v:
+                        for i in nodes_depots:
+                            x[i, 2 * n + v + num_vehicles, k].lb = 0
+                            x[i, 2 * n + v + num_vehicles, k].ub = 0
+
+            # not add arc if vehicle cannot reach node j from node i within the time window of j
+            for k in vehicles:
+                for i in nodes:
+                    for j in nodes:
+                        if T_H_L[i] + S + T_ij[i][j] > T_H_U[j]:
+                            x[i, j, k].lb = 0
+                            x[i, j, k].ub = 0
+
             # FLOW CONSTRAINTS
             m.addConstrs(
                 (
@@ -151,10 +208,12 @@ class InitialModel:
                 name="Flow1",
             )
 
+            '''
             m.addConstrs(
                 (x[i, i, k] == 0 for i in nodes_depots for k in vehicles),
                 name="Flow2",
             )
+            '''
 
             m.addConstrs(
                 (
@@ -173,6 +232,7 @@ class InitialModel:
                 name="Flow3.2",
             )
 
+            '''
             # vehicles cannot drive into an origin
             m.addConstrs(
                 (
@@ -226,6 +286,7 @@ class InitialModel:
                 ),
                 name="Flow5.2",
             )
+            '''
 
             m.addConstrs(
                 (
@@ -417,40 +478,6 @@ class InitialModel:
                 (d[i] >= t[n + i] - (t[i] + (1 + F) * T_ij[i][n + i]) for i in pickups),
                 name="RideTime1",
             )
-
-            # ARC ELIMINATION
-            '''
-            m.addConstr(
-                (
-                    quicksum(x[i, 2 * n + k + num_vehicles, k]
-                    for i in pickups
-                    for k in vehicles)
-                    == 0
-                ),
-                name="ArcElimination1",
-            )
-
-            m.addConstrs(
-                (
-                    x[i, j, k]*(T_H_L[i].timestamp() + S + T_ij[i][j].total_seconds())
-                    <= x[i, j, k]*T_H_U[j].timestamp()
-                    for i in nodes
-                    for j in nodes
-                    for k in vehicles
-                ),
-                name="ArcElimination2",
-            )
-
-            m.addConstr(
-                (
-                    quicksum(x[2 * n + k, j, k]
-                    for j in dropoffs
-                    for k in vehicles)
-                    == 0
-                ),
-                name="ArcElimination3",
-            )
-            '''
 
             # VALID INEQUALITIES
             m.addConstr(

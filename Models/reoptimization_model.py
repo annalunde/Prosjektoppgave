@@ -123,9 +123,12 @@ class ReoptModel:
             '''NOTE: ADDED pickups_previous AND pickups_previous_not_rejected SETS'''
             pickups_previous = [i for i in range(len(pickups)-1)]
             pickups_previous_not_rejected = []
+            nodes_previous_not_rejected = []
             for i in pickups_previous:
                 if i not in rejected:
                     pickups_previous_not_rejected.append(i)
+                    nodes_previous_not_rejected.append(i)
+                    nodes_previous_not_rejected.append(self.num_requests + i)
             dropoffs = [i for i in range(self.num_requests, 2 * self.num_requests)]
             nodes = [i for i in range(2 * self.num_requests)]
             vehicles = [i for i in range(num_vehicles)]
@@ -142,8 +145,8 @@ class ReoptModel:
             d = m.addVars(pickups, name="d")
             '''NOTE: CHANGED s TO BE DEFINED FOR pickups NOT pickups_new'''
             s = m.addVars(pickups, vtype=GRB.BINARY, name="s")
-            z_plus = m.addVars(nodes_remaining, name="z+")
-            z_minus = m.addVars(nodes_remaining, name="z-")
+            z_plus = m.addVars(nodes_previous_not_rejected, name="z+")
+            z_minus = m.addVars(nodes_previous_not_rejected, name="z-")
             y = m.addVars(vehicles, vtype=GRB.BINARY, name="y")
 
             # OBJECTIVE FUNCTION
@@ -161,7 +164,7 @@ class ReoptModel:
                 + quicksum(C_F * d[i] for i in pickups)
                 + quicksum(C_R * s[i] for i in pickups)
                 + quicksum(C_K * y[k] for k in vehicles)
-                + quicksum(C_O * (z_plus[i] + z_minus[i]) for i in nodes_remaining),
+                + quicksum(C_O * (z_plus[i] + z_minus[i]) for i in nodes_previous_not_rejected),
                 GRB.MINIMIZE,
             )
 
@@ -533,7 +536,7 @@ class ReoptModel:
             m.addConstrs(
                 (
                     T_O[i] - t[i] == z_plus[i] - z_minus[i]
-                    for i in nodes_remaining
+                    for i in nodes_previous_not_rejected
                 ),
                 name="TimeWindow5",
             )

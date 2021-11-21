@@ -1,4 +1,5 @@
 import time
+import json
 import pandas as pd
 import matplotlib.pyplot as plt
 import gurobipy as gp
@@ -12,7 +13,7 @@ from models.initial_model import InitialModel
 from models.reoptimization_model import ReoptModel
 
 
-def main(num_events, sleep, start_time, tuning):
+def main(num_events, sleep, start_time, tuning, beta):
     """
     This function performs a run for the DDDARP problem, where requests that are known in advance are planned and routed initially,
     as well as new requests are received throughout the day. When a new request arrives, a reoptimization model is utilized to first
@@ -28,6 +29,8 @@ def main(num_events, sleep, start_time, tuning):
     num_requests = init_model.get_n()
     rejected = []
     runtime_track.append([num_requests, (datetime.now() - start_time).total_seconds()])
+    operational = None
+    quality = None
 
     # Event Based Rerouting
     for i in range(num_events):
@@ -36,9 +39,15 @@ def main(num_events, sleep, start_time, tuning):
         event = get_event(i, tuning)
         num_requests += 1
         reopt_model = ReoptModel(
-            initial_route_plan, event, num_requests, first, rejected
+            initial_route_plan, event, num_requests, first, rejected, beta
         )
-        reopt_plan, rejected_after, num_unused_vehicles = reopt_model.run_model()
+        (
+            reopt_plan,
+            rejected_after,
+            num_unused_vehicles,
+            operational,
+            quality,
+        ) = reopt_model.run_model()
         if i != num_events - 1:
             print("Waiting for new request")
         time.sleep(sleep)
@@ -48,8 +57,8 @@ def main(num_events, sleep, start_time, tuning):
         )
         rejected = rejected_after
 
-    df = pd.DataFrame(runtime_track, columns=["Number of Requests", "Solution Time"])
-    plot(df)
+    # df = pd.DataFrame(runtime_track, columns=["Number of Requests", "Solution Time"])
+    # plot(df)
 
     print(
         "Service Rate Whole: ",
@@ -65,6 +74,8 @@ def main(num_events, sleep, start_time, tuning):
         "Number of Vehicles Not Used: ",
         num_unused_vehicles,
     )
+
+    return operational, quality
 
 
 def plot(df):
@@ -88,8 +99,15 @@ def get_event(i, tuning):
 
 
 if __name__ == "__main__":
-    num_events = 10
-    sleep = 1
-    start_time = datetime.now()
-    tuning = True
-    main(num_events, sleep, start_time, tuning)
+    pareto = {}
+    beta = 0
+    while beta <= 0.9:
+        num_events = 10
+        sleep = 1
+        start_time = datetime.now()
+        tuning = True
+        operational, quality = main(num_events, sleep, start_time, tuning, beta)
+        pareto[beta] = (operational, quality)
+        beta += 0.1
+    with open("pareto.txt", "w") as file:
+        file.write(json.dumps(pareto))

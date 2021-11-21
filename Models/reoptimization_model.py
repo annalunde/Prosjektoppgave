@@ -9,7 +9,7 @@ from models.updater_for_reopt import Updater
 
 
 class ReoptModel:
-    def __init__(self, current_route_plan, event, num_requests, first, rejected):
+    def __init__(self, current_route_plan, event, num_requests, first, rejected, beta):
         self.model = "MIP 1"
         self.route_plan = current_route_plan
         self.event = event
@@ -17,6 +17,7 @@ class ReoptModel:
         self.updater = Updater(
             self.route_plan, self.event, self.num_requests, first, rejected
         )
+        self.beta = beta
 
     def vizualize_route(self, results, num_nodes_and_depots):
         dot = graphviz.Digraph(engine="neato")
@@ -141,7 +142,7 @@ class ReoptModel:
 
             # OBJECTIVE FUNCTION
             m.setObjectiveN(
-                beta
+                self.beta
                 * (
                     quicksum(
                         C_D * D_ij[i][j] * x[i, j, k]
@@ -156,7 +157,7 @@ class ReoptModel:
             )
 
             m.setObjectiveN(
-                (1 - beta)
+                (1 - self.beta)
                 * (
                     quicksum(C_T * (l[i] + u[i]) for i in nodes)
                     + quicksum(C_F * d[i] for i in pickups)
@@ -496,6 +497,7 @@ class ReoptModel:
             # RUN MODEL
             m.optimize()
 
+            """
             for i in pickups_new:
                 print(s[i].varName, s[i].x)
                 if s[i].x > 0.1:
@@ -515,9 +517,10 @@ class ReoptModel:
                         "%Y-%m-%d %H:%M:%S"
                     ),
                 )
+            """
 
             # print("Obj: %g" % m.objVal)
-
+            print(self.beta)
             obj1 = m.getObjective(index=0)
             print("Operational costs: ", obj1.getValue())
             obj2 = m.getObjective(index=1)
@@ -525,6 +528,9 @@ class ReoptModel:
 
             obj3 = obj1.getValue() + obj2.getValue()
             print("Total: ", obj3)
+
+            operational = obj1.getValue()
+            quality = obj2.getValue()
 
             """
             NOTE
@@ -554,7 +560,7 @@ class ReoptModel:
                 ]
             )
 
-            return route_plan, rejected, num_not_used_vehicles
+            return route_plan, rejected, num_not_used_vehicles, operational, quality
 
         except GurobiError as e:
             print("Error reported")

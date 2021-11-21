@@ -24,7 +24,7 @@ Q_W = 1
 F = 0.5
 
 # Weighting of Operational Costs vs Quality of Service
-beta = 0.2
+# beta = 0.2
 
 # Number of hours to open to reoptimize
 H = 0.5

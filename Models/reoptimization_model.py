@@ -160,8 +160,7 @@ class ReoptModel:
                 * (
                     quicksum(C_T * (l[i] + u[i]) for i in nodes)
                     + quicksum(C_F * d[i] for i in pickups)
-                    + quicksum(C_R * s[i] for i in pickups_new)
-                    + (C_R * len(rejected))
+                    + quicksum(C_R * s[i] for i in pickups)
                     + quicksum(C_O * (z_plus[i] + z_minus[i]) for i in nodes_remaining)
                 ),
                 index=1,
@@ -584,13 +583,13 @@ class ReoptModel:
             # m.computeIIS()
             # m.write("model.ilp")
 
-            """
+            print("New Event: ", self.num_requests - 1)
             for i in pickups_new:
                 print(s[i].varName, s[i].x)
                 if s[i].x > 0.1:
                     print("Your request has been rejected:/")
                     rejected.append(i)
-
+            """
             for v in m.getVars():
                 if v.varName.startswith("t"):
                     continue

@@ -3,7 +3,8 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
-from models.initial_config import *
+from Models.initial_config import *
+from Models.reoptimization_config import num_vehicles
 
 
 class InitialModel:
@@ -128,6 +129,71 @@ class InitialModel:
 
             m.ModelSense = GRB.MINIMIZE
 
+            # ARC ELIMINATION
+            # cannot drive from pick-up nodes to destinations
+            for v in vehicles:
+                for k in vehicles:
+                    for i in pickups:
+                        x[i, 2 * n + v + num_vehicles, k].lb = 0
+                        x[i, 2 * n + v + num_vehicles, k].ub = 0
+
+            # cannot drive from origins to drop-offs
+            for v in vehicles:
+                for k in vehicles:
+                    for j in dropoffs:
+                        x[2 * n + v, j, k].lb = 0
+                        x[2 * n + v, j, k].ub = 0
+
+            # cannot drive from own drop-off to own pick-up
+            for k in vehicles:
+                for i in pickups:
+                    x[n + i, i, k].lb = 0
+                    x[n + i, i, k].ub = 0
+
+            # cannot drive from itself to itself
+            for k in vehicles:
+                for i in pickups:
+                    x[i, i, k].lb = 0
+                    x[i, i, k].ub = 0
+
+            # cannot drive into an origin
+            for v in vehicles:
+                for k in vehicles:
+                    for i in nodes_depots:
+                        x[i, 2 * n + v, k].lb = 0
+                        x[i, 2 * n + v, k].ub = 0
+
+            # cannot drive from a destination
+            for v in vehicles:
+                for k in vehicles:
+                    for j in nodes_depots:
+                        x[2 * n + v + num_vehicles, j, k].lb = 0
+                        x[2 * n + v + num_vehicles, j, k].ub = 0
+
+            # cannot drive from origins that are not their own
+            for v in vehicles:
+                for k in vehicles:
+                    if k != v:
+                        for j in nodes_depots:
+                            x[2 * n + v, j, k].lb = 0
+                            x[2 * n + v, j, k].ub = 0
+
+            # cannot drive into destinations that are not their own
+            for v in vehicles:
+                for k in vehicles:
+                    if k != v:
+                        for i in nodes_depots:
+                            x[i, 2 * n + v + num_vehicles, k].lb = 0
+                            x[i, 2 * n + v + num_vehicles, k].ub = 0
+
+            # not add arc if vehicle cannot reach node j from node i within the time window of j
+            for k in vehicles:
+                for i in nodes:
+                    for j in nodes:
+                        if T_H_L[i] + S + T_ij[i][j] > T_H_U[j]:
+                            x[i, j, k].lb = 0
+                            x[i, j, k].ub = 0
+
             # FLOW CONSTRAINTS
             m.addConstrs(
                 (
@@ -137,10 +203,12 @@ class InitialModel:
                 name="Flow1",
             )
 
+            """
             m.addConstrs(
                 (x[i, i, k] == 0 for i in nodes_depots for k in vehicles),
                 name="Flow2",
             )
+            """
 
             m.addConstrs(
                 (
@@ -159,6 +227,7 @@ class InitialModel:
                 name="Flow3.2",
             )
 
+            """
             # vehicles cannot drive into an origin
             m.addConstrs(
                 (
@@ -212,6 +281,7 @@ class InitialModel:
                 ),
                 name="Flow5.2",
             )
+            """
 
             m.addConstrs(
                 (
@@ -404,6 +474,63 @@ class InitialModel:
                 name="RideTime1",
             )
 
+            # VALID INEQUALITIES
+            m.addConstr(
+                (
+                    quicksum(x[i, j, k] for i in nodes for j in nodes for k in vehicles)
+                    <= num_nodes_and_depots + num_vehicles
+                ),
+                name="ValidInequality1",
+            )
+
+            # SUBTOUR ELIMINATION SIZE 2
+            subtour = []
+            for i in nodes:
+                for j in nodes:
+                    if i < j:
+                        counter = 1
+                        subtour.append(i)
+                        subtour.append(j)
+
+                        m.addConstr(
+                            (
+                                quicksum(
+                                    x[i, j, k]
+                                    for i in subtour
+                                    for j in subtour
+                                    for k in vehicles
+                                )
+                                <= len(subtour) - 1
+                            ),
+                            name="Subtour" + str(counter),
+                        )
+                        subtour = []
+
+            # SUBTOUR ELIMINATION SIZE 3
+            subtour = []
+            for i in nodes:
+                for j in nodes:
+                    for e in nodes:
+                        if i < j and j < e:
+                            counter = 1
+                            subtour.append(i)
+                            subtour.append(j)
+                            subtour.append(e)
+
+                            m.addConstr(
+                                (
+                                    quicksum(
+                                        x[i, j, k]
+                                        for i in subtour
+                                        for j in subtour
+                                        for k in vehicles
+                                    )
+                                    <= len(subtour) - 1
+                                ),
+                                name="Subtour" + str(counter),
+                            )
+                            subtour = []
+
             # RUN MODEL
             m.optimize()
 
@@ -429,6 +556,19 @@ class InitialModel:
                 print(d[i].varName, d[i].x)
 
             print("Obj: %g" % m.objVal)
+
+            """
+            obj1 = m.getObjective(index=0)
+            print("Operational costs")
+            print(obj1.getValue())
+            obj2 = m.getObjective(index=1)
+            print("Quality of service")
+            print(obj2.getValue())
+
+            obj3 = obj1.getValue() + obj2.getValue()
+            print("Total")
+            print(obj3)
+            """
 
             # self.vizualize_route(results=m.getVars())
 

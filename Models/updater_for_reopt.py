@@ -6,7 +6,7 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 from math import radians, degrees
-from models.reoptimization_config import *
+from Models.reoptimization_config import *
 from sklearn.metrics.pairwise import haversine_distances
 
 
@@ -46,6 +46,11 @@ class Updater:
         nodes = [i for i in range(2 * self.num_requests)]
         vehicles = [i for i in range(num_vehicles)]
         nodes_depots = [i for i in range(self.num_nodes_and_depots)]
+        pickups_previous = [i for i in range(len(pickups) - 1)]
+        pickups_previous_not_rejected = []
+            for i in pickups_previous:
+                if i not in rejected:
+                    pickups_previous_not_rejected.append(i)
 
         # FETCH DATA
         if self.first:  # NOTE
@@ -53,14 +58,14 @@ class Updater:
                 config("data_path_test_tuning"), nrows=self.num_requests - 1
             )
             df = df.append(self.event, ignore_index=True)
-            df.to_csv(f"Data/Running/data_requests_for:{self.num_requests}.csv")
+            df.to_csv("data_requests_for:"+str(self.num_requests)+".csv")
 
         else:
             df = pd.read_csv(
-                f"Data/Running/data_requests_for:{self.num_requests-1}.csv"
+                "data_requests_for:" + str(self.num_requests - 1) + ".csv"
             )
             df = df.append(self.event, ignore_index=True)
-            df.to_csv(f"Data/Running/data_requests_for:{self.num_requests}.csv")
+            df.to_csv("data_requests_for:"+str(self.num_requests)+".csv")
 
         # CREATE REMAINING SETS
         time_now = pd.to_datetime(self.event["Request Creation Time"])
@@ -255,6 +260,7 @@ class Updater:
             pickups_remaining,
             pickups_new,
             pickups,
+            pickups_previous_not_rejected,
             nodes_depots,
             nodes_remaining,
             nodes_new,

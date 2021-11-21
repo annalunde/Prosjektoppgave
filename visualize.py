@@ -10,8 +10,9 @@ from IPython.display import display
 
 
 class Visualizer:
-    def __init__(self, data_path):
-        self.data_path = data_path
+    def __init__(self, data_path_before, data_path_after):
+        self.data_path_before = data_path_before
+        self.data_path_after = data_path_after
 
     def generate_map(
         self,
@@ -76,7 +77,9 @@ class Visualizer:
         folium_map.save("map_requests.html")
 
     def visualize_on_map(self):
-        data = pd.read_csv(self.data_path)
+        data_before = pd.read_csv(self.data_path_before)
+        data_after = pd.read_csv(self.data_path_after)
+        data = data_before.append(data_after)
 
         # Let's add the starting and ending lat longs to the folium map using the generate_map function
         return self.generate_map(
@@ -85,10 +88,10 @@ class Visualizer:
             "cartodbpositron",
             "Origin Lat",
             "Origin Lng",
-            "#D19E39",
+            "#E2366B",
             "Destination Lat",
             "Destination Lng",
-            "#39516A",
+            "#30506B",
         )
 
 
@@ -96,7 +99,7 @@ def main():
     visualizer = None
 
     try:
-        visualizer = Visualizer(data_path=config("data_path_RAT"))
+        visualizer = Visualizer(data_path_before=config("data_path_test"),data_path_after=config("data_path_events"))
         print("Visualizing data: ")
         visualizer.visualize_on_map()
 

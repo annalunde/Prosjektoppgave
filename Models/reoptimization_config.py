@@ -2,7 +2,7 @@
 import numpy as np
 from datetime import datetime, timedelta
 from scipy.spatial import distance
-from models.initial_config import *
+from Models.initial_config import *
 
 
 # Vehicles
@@ -31,3 +31,6 @@ H = 0.5
 
 # Service time
 S = timedelta(minutes=2).total_seconds() / 3600
+
+# Added ride time slack if rejected
+M = 10

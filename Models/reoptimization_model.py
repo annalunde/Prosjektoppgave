@@ -3,9 +3,9 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
-from models.reoptimization_config import *
-from models.updater_for_reopt import *
-from models.updater_for_reopt import Updater
+from Models.reoptimization_config import *
+from Models.updater_for_reopt import *
+from Models.updater_for_reopt import Updater
 
 
 class ReoptModel:
@@ -97,6 +97,7 @@ class ReoptModel:
             pickups_remaining,
             pickups_new,
             pickups,
+            pickups_previous_not_rejected,
             nodes_depots,
             nodes_remaining,
             nodes_new,
@@ -120,9 +121,7 @@ class ReoptModel:
             m = gp.Model("mip1")
             m.setParam("NumericFocus", 3)
 
-            pickups = [i for i in range(self.num_requests)]
             dropoffs = [i for i in range(self.num_requests, 2 * self.num_requests)]
-            nodes = [i for i in range(2 * self.num_requests)]
             vehicles = [i for i in range(num_vehicles)]
 
             # Create variables
@@ -135,40 +134,92 @@ class ReoptModel:
             l = m.addVars(nodes, name="l")
             u = m.addVars(nodes, name="u")
             d = m.addVars(pickups, name="d")
-            s = m.addVars(pickups_new, vtype=GRB.BINARY, name="s")
+            s = m.addVars(pickups, vtype=GRB.BINARY, name="s")
             z_plus = m.addVars(nodes_remaining, name="z+")
             z_minus = m.addVars(nodes_remaining, name="z-")
             y = m.addVars(vehicles, vtype=GRB.BINARY, name="y")
 
             # OBJECTIVE FUNCTION
-            m.setObjectiveN(
-                self.beta
-                * (
-                    quicksum(
-                        C_D * D_ij[i][j] * x[i, j, k]
-                        for i in nodes_depots
-                        for j in nodes_depots
-                        for k in vehicles
-                        if j != (2 * self.num_requests + k + num_vehicles)
-                    )
-                    + quicksum(C_K * y[k] for k in vehicles)
-                ),
-                index=0,
+            m.setObjective(
+                quicksum(
+                    C_D * D_ij[i][j] * x[i, j, k]
+                    for i in nodes_depots
+                    for j in nodes_depots
+                    for k in vehicles
+                    if j != (2 * self.num_requests + k + num_vehicles)
+                )
+                + quicksum(C_T * (l[i] + u[i]) for i in nodes)
+                + quicksum(C_F * d[i] for i in pickups)
+                + quicksum(C_R * s[i] for i in pickups)
+                + quicksum(C_K * y[k] for k in vehicles)
+                + quicksum(C_O * (z_plus[i] + z_minus[i]) for i in nodes_remaining),
+                GRB.MINIMIZE,
             )
 
-            m.setObjectiveN(
-                (1 - self.beta)
-                * (
-                    quicksum(C_T * (l[i] + u[i]) for i in nodes)
-                    + quicksum(C_F * d[i] for i in pickups)
-                    + quicksum(C_R * s[i] for i in pickups_new)
-                    + (C_R * len(rejected))
-                    + quicksum(C_O * (z_plus[i] + z_minus[i]) for i in nodes_remaining)
-                ),
-                index=1,
-            )
+            # ARC ELIMINATION
+            # cannot drive from pick-up nodes to destinations
+            for v in vehicles:
+                for k in vehicles:
+                    for i in pickups:
+                        x[i, 2 * self.num_requests + v + num_vehicles, k].lb = 0
+                        x[i, 2 * self.num_requests + v + num_vehicles, k].ub = 0
 
-            m.ModelSense = GRB.MINIMIZE
+            # cannot drive from origins to drop-offs
+            for v in vehicles:
+                for k in vehicles:
+                    for j in dropoffs:
+                        x[2 * self.num_requests + v, j, k].lb = 0
+                        x[2 * self.num_requests + v, j, k].ub = 0
+
+            # cannot drive from own drop-off to own pick-up
+            for k in vehicles:
+                for i in pickups:
+                    x[self.num_requests + i, i, k].lb = 0
+                    x[self.num_requests + i, i, k].ub = 0
+
+            # cannot drive from itself to itself
+            for k in vehicles:
+                for i in pickups:
+                    x[i, i, k].lb = 0
+                    x[i, i, k].ub = 0
+
+            # cannot drive into an origin
+            for v in vehicles:
+                for k in vehicles:
+                    for i in nodes_depots:
+                        x[i, 2 * self.num_requests + v, k].lb = 0
+                        x[i, 2 * self.num_requests + v, k].ub = 0
+
+            # cannot drive from a destination
+            for v in vehicles:
+                for k in vehicles:
+                    for j in nodes_depots:
+                        x[2 * self.num_requests + v + num_vehicles, j, k].lb = 0
+                        x[2 * self.num_requests + v + num_vehicles, j, k].ub = 0
+
+            # cannot drive from origins that are not their own
+            for v in vehicles:
+                for k in vehicles:
+                    if k != v:
+                        for j in nodes_depots:
+                            x[2 * self.num_requests + v, j, k].lb = 0
+                            x[2 * self.num_requests + v, j, k].ub = 0
+
+            # cannot drive into destinations that are not their own
+            for v in vehicles:
+                for k in vehicles:
+                    if k != v:
+                        for i in nodes_depots:
+                            x[i, 2 * self.num_requests + v + num_vehicles, k].lb = 0
+                            x[i, 2 * self.num_requests + v + num_vehicles, k].ub = 0
+
+            # not add arc if vehicle cannot reach node j from node i within the time window of j
+            for k in vehicles:
+                for i in nodes:
+                    for j in nodes:
+                        if T_H_L[i] + S + T_ij[i][j] > T_H_U[j]:
+                            x[i, j, k].lb = 0
+                            x[i, j, k].ub = 0
 
             # FIXATING VALUES
 
@@ -182,6 +233,11 @@ class ReoptModel:
                 t[f_t].lb = fixate_t[f_t]
                 t[f_t].ub = fixate_t[f_t]
 
+            # rejected requests in previous plans
+            for i in rejected:
+                s[i].lb = 1
+                s[i].ub = 1
+
             # FLOW CONSTRAINTS
             m.addConstrs(
                 (
@@ -190,11 +246,12 @@ class ReoptModel:
                 ),
                 name="Flow1",
             )
-
+            """
             m.addConstrs(
                 (x[i, i, k] == 0 for i in nodes_depots for k in vehicles),
                 name="Flow2",
             )
+            """
             m.addConstrs(
                 (
                     quicksum(x[2 * self.num_requests + k, j, k] for j in nodes_depots)
@@ -215,7 +272,7 @@ class ReoptModel:
                 ),
                 name="Flow3.2",
             )
-
+            """
             # vehicles cannot drive into an origin
             m.addConstrs(
                 (
@@ -272,7 +329,7 @@ class ReoptModel:
                 ),
                 name="Flow5.2",
             )
-
+            """
             m.addConstrs(
                 (
                     quicksum(x[i, j, k] for j in nodes_depots)
@@ -464,20 +521,29 @@ class ReoptModel:
             )
 
             m.addConstrs(
-                (
-                    T_O[i] - t[i] == z_plus[i] - z_minus[i]
-                    for i in nodes_remaining
-                    for k in vehicles
-                ),
+                (T_O[i] - t[i] == z_plus[i] - z_minus[i] for i in nodes_remaining),
                 name="TimeWindow5",
             )
 
             # RIDE TIME CONSTRAINTS
+            """
             m.addConstrs(
                 (
                     d[i]
                     >= t[self.num_requests + i]
                     - (t[i] + (1 + F) * T_ij[i][self.num_requests + i])
+                    for i in pickups
+                ),
+                name="RideTime1",
+            )
+            """
+
+            """NOTE: NEW RideTime1 WHERE d[i] IS NOT CONSTRAINED IF i IS REJECTED"""
+            m.addConstrs(
+                (
+                    d[i]
+                    >= t[self.num_requests + i]
+                    - (t[i] + (1 + F + M * s[i]) * T_ij[i][self.num_requests + i])
                     for i in pickups
                 ),
                 name="RideTime1",
@@ -494,8 +560,16 @@ class ReoptModel:
                 name="Rejection1",
             )
 
+            """NOTE: ADDED THIS CONSTRAINT TO SET s[i]=0 FOR ALL REQUESTS THAT HAVE PREVIOUSLY BEEN ACCEPTED"""
+            m.addConstr(
+                (quicksum(s[i] for i in pickups_previous_not_rejected) == 0),
+                name="Rejection2",
+            )
+
             # RUN MODEL
             m.optimize()
+            # m.computeIIS()
+            # m.write("model.ilp")
 
             """
             for i in pickups_new:

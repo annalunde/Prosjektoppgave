@@ -529,7 +529,6 @@ class ReoptModel:
                 (
                     T_O[i] - t[i] == z_plus[i] - z_minus[i]
                     for i in nodes_remaining
-                    for k in vehicles
                 ),
                 name="TimeWindow5",
             )
@@ -551,17 +550,10 @@ class ReoptModel:
                 (
                     d[i]
                     >= t[self.num_requests + i]
-                    - (t[i] + (1 + F + s[i]*10) * T_ij[i][self.num_requests + i])
+                    - (t[i] + (1 + F + M * s[i]) * T_ij[i][self.num_requests + i])
                     for i in pickups
                 ),
-                name="RideTimeTest",
-            )
-
-            m.addConstr(
-                (
-                    quicksum(s[i] for i in pickups_previous_not_rejected) == 0
-                ),
-                name="RideTimeTest2",
+                name="RideTime1",
             )
 
             # REJECTION CONSTRAINTS
@@ -573,6 +565,13 @@ class ReoptModel:
                     for i in pickups_new
                 ),
                 name="Rejection1",
+            )
+
+            m.addConstr(
+                (
+                        quicksum(s[i] for i in pickups_previous_not_rejected) == 0
+                ),
+                name="Rejection2",
             )
 
             # RUN MODEL

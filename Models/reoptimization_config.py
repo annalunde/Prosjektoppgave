@@ -28,3 +28,6 @@ H = 0.5
 
 # Service time
 S = timedelta(minutes=2).total_seconds() / 3600
+
+# Added ride time slack if rejected
+M = 10

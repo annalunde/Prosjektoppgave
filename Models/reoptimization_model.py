@@ -120,6 +120,7 @@ class ReoptModel:
             m.setParam("NumericFocus", 3)
 
             pickups = [i for i in range(self.num_requests)]
+            '''NOTE: ADDED pickups_previous AND pickups_previous_not_rejected SETS'''
             pickups_previous = [i for i in range(len(pickups)-1)]
             pickups_previous_not_rejected = []
             for i in pickups_previous:
@@ -139,12 +140,15 @@ class ReoptModel:
             l = m.addVars(nodes, name="l")
             u = m.addVars(nodes, name="u")
             d = m.addVars(pickups, name="d")
+            '''NOTE: CHANGED s TO BE DEFINED FOR pickups NOT pickups_new'''
             s = m.addVars(pickups, vtype=GRB.BINARY, name="s")
             z_plus = m.addVars(nodes_remaining, name="z+")
             z_minus = m.addVars(nodes_remaining, name="z-")
             y = m.addVars(vehicles, vtype=GRB.BINARY, name="y")
 
             # OBJECTIVE FUNCTION
+            '''NOTE: SUMS FOR ALL pickups, NOT JUST pickups_new for C_R'''
+            '''NOTE: REMOVED C_R * len(rejected)'''
             m.setObjective(
                 quicksum(
                     C_D * D_ij[i][j] * x[i, j, k]
@@ -238,6 +242,7 @@ class ReoptModel:
                 t[f_t].lb = fixate_t[f_t]
                 t[f_t].ub = fixate_t[f_t]
 
+            '''NOTE: ADDED THIS PART'''
             # rejected requests in previous plans
             for i in rejected:
                 s[i].lb = 1
@@ -540,12 +545,13 @@ class ReoptModel:
                     d[i]
                     >= t[self.num_requests + i]
                     - (t[i] + (1 + F) * T_ij[i][self.num_requests + i])
-                    for i in pickups_remaining
+                    for i in pickups
                 ),
                 name="RideTime1",
             )
             '''
 
+            '''NOTE: NEW RideTime1 WHERE d[i] IS NOT CONSTRAINED IF i IS REJECTED'''
             m.addConstrs(
                 (
                     d[i]
@@ -567,6 +573,7 @@ class ReoptModel:
                 name="Rejection1",
             )
 
+            '''NOTE: ADDED THIS CONSTRAINT TO SET s[i]=0 FOR ALL REQUESTS THAT HAVE PREVIOUSLY BEEN ACCEPTED'''
             m.addConstr(
                 (
                         quicksum(s[i] for i in pickups_previous_not_rejected) == 0
@@ -577,7 +584,10 @@ class ReoptModel:
             # RUN MODEL
 
             print(len(nodes_remaining))
+            print(nodes_remaining)
             m.optimize()
+            #m.computeIIS()
+            #m.write("model.ilp")
 
             for i in pickups_new:
                 print(s[i].varName, s[i].x)

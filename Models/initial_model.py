@@ -3,8 +3,8 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
-from Models.initial_config import *
-from Models.reoptimization_config import num_vehicles
+from models.initial_config import *
+from models.reoptimization_config import num_vehicles
 
 
 class InitialModel:

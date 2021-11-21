@@ -2,7 +2,7 @@
 import numpy as np
 from datetime import datetime, timedelta
 from scipy.spatial import distance
-from Models.initial_config import *
+from models.initial_config import *
 
 
 # Vehicles

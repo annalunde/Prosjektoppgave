@@ -8,9 +8,9 @@ from gurobipy import GurobiError
 from gurobipy import quicksum
 from decouple import config
 from datetime import datetime, timedelta
-from Models import *
-from Models.initial_model import InitialModel
-from Models.reoptimization_model import ReoptModel
+from models import *
+from models.initial_model import InitialModel
+from models.reoptimization_model import ReoptModel
 
 
 def main(num_events, sleep, start_time, tuning, beta):
@@ -99,6 +99,13 @@ def get_event(i, tuning):
 
 
 if __name__ == "__main__":
+    num_events = 10
+    sleep = 1
+    start_time = datetime.now()
+    tuning = True
+    operational, quality = main(num_events, sleep, start_time, tuning, beta=0.5)
+
+    """
     pareto = {}
     beta = 0
     while beta <= 0.9:
@@ -111,3 +118,4 @@ if __name__ == "__main__":
         beta += 0.1
     with open("pareto.txt", "w") as file:
         file.write(json.dumps(pareto))
+    """

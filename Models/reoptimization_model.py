@@ -3,9 +3,9 @@ from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
-from Models.reoptimization_config import *
-from Models.updater_for_reopt import *
-from Models.updater_for_reopt import Updater
+from models.reoptimization_config import *
+from models.updater_for_reopt import *
+from models.updater_for_reopt import Updater
 
 
 class ReoptModel:
@@ -140,21 +140,34 @@ class ReoptModel:
             y = m.addVars(vehicles, vtype=GRB.BINARY, name="y")
 
             # OBJECTIVE FUNCTION
-            m.setObjective(
-                quicksum(
-                    C_D * D_ij[i][j] * x[i, j, k]
-                    for i in nodes_depots
-                    for j in nodes_depots
-                    for k in vehicles
-                    if j != (2 * self.num_requests + k + num_vehicles)
-                )
-                + quicksum(C_T * (l[i] + u[i]) for i in nodes)
-                + quicksum(C_F * d[i] for i in pickups)
-                + quicksum(C_R * s[i] for i in pickups)
-                + quicksum(C_K * y[k] for k in vehicles)
-                + quicksum(C_O * (z_plus[i] + z_minus[i]) for i in nodes_remaining),
-                GRB.MINIMIZE,
+            m.setObjectiveN(
+                self.beta
+                * (
+                    quicksum(
+                        C_D * D_ij[i][j] * x[i, j, k]
+                        for i in nodes_depots
+                        for j in nodes_depots
+                        for k in vehicles
+                        if j != (2 * self.num_requests + k + num_vehicles)
+                    )
+                    + quicksum(C_K * y[k] for k in vehicles)
+                ),
+                index=0,
             )
+
+            m.setObjectiveN(
+                (1 - self.beta)
+                * (
+                    quicksum(C_T * (l[i] + u[i]) for i in nodes)
+                    + quicksum(C_F * d[i] for i in pickups)
+                    + quicksum(C_R * s[i] for i in pickups_new)
+                    + (C_R * len(rejected))
+                    + quicksum(C_O * (z_plus[i] + z_minus[i]) for i in nodes_remaining)
+                ),
+                index=1,
+            )
+
+            m.ModelSense = GRB.MINIMIZE
 
             # ARC ELIMINATION
             # cannot drive from pick-up nodes to destinations

@@ -54,25 +54,67 @@ class Visualizer:
         folium_map = folium.Map(location=map_location, zoom_start=11, tiles=map_style)
 
         # for each row in the data, add a cicle marker
+        data_size = len(data)
+        counter = 1
         for index, row in data.iterrows():
+            if counter == 8:
+                # add starting location markers to the map
+                folium.CircleMarker(
+                    location=(row[start_lat_col], row[start_long_col]),
+                    color=start_color,
+                    radius=5,
+                    weight=1,
+                    fill=True,
+                ).add_to(folium_map)
 
-            # add starting location markers to the map
-            folium.CircleMarker(
-                location=(row[start_lat_col], row[start_long_col]),
-                color=start_color,
-                radius=5,
-                weight=1,
-                fill=True,
-            ).add_to(folium_map)
+                # add end location markers to the map
+                folium.CircleMarker(
+                    location=(row[end_lat_col], row[end_long_col]),
+                    color=end_color,
+                    radius=5,
+                    weight=1,
+                    fill=True,
+                ).add_to(folium_map)
 
-            # add end location markers to the map
-            folium.CircleMarker(
-                location=(row[end_lat_col], row[end_long_col]),
-                color=end_color,
-                radius=5,
-                weight=1,
-                fill=True,
-            ).add_to(folium_map)
+            if counter == 9:
+                # add starting location markers to the map
+                folium.CircleMarker(
+                    location=(row[start_lat_col], row[start_long_col]),
+                    color="#DB9D15",
+                    radius=5,
+                    weight=1,
+                    fill=True,
+                ).add_to(folium_map)
+
+                # add end location markers to the map
+                folium.CircleMarker(
+                    location=(row[end_lat_col], row[end_long_col]),
+                    color="#47A77E",
+                    radius=5,
+                    weight=1,
+                    fill=True,
+                ).add_to(folium_map)
+
+            if counter > 9:
+                # add starting location markers to the map
+                folium.CircleMarker(
+                    location=(row[start_lat_col], row[start_long_col]),
+                    color="#A86ED4",
+                    radius=5,
+                    weight=1,
+                    fill=True,
+                ).add_to(folium_map)
+
+                # add end location markers to the map
+                folium.CircleMarker(
+                    location=(row[end_lat_col], row[end_long_col]),
+                    color="#A86ED4",
+                    radius=5,
+                    weight=1,
+                    fill=True,
+                ).add_to(folium_map)
+
+            counter += 1
 
         folium_map.save("map_requests.html")
 
@@ -99,7 +141,7 @@ def main():
     visualizer = None
 
     try:
-        visualizer = Visualizer(data_path_before=config("data_path_test"),data_path_after=config("data_path_events"))
+        visualizer = Visualizer(data_path_before=config("data_path_case_study"),data_path_after=config("data_path_case_study_events"))
         print("Visualizing data: ")
         visualizer.visualize_on_map()
 

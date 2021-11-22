@@ -12,7 +12,7 @@ num_vehicles = 3  # this also gives the number of vehicles for initial model
 C_D = 1  # per vehicle
 C_F = 60
 C_T = 60
-C_R = 60  # lost revenue from not serving a request
+C_R = 90  # lost revenue from not serving a request
 C_K = 55  # cost of using vehicle k
 C_O = 60  # cost of deviation from original plan
 

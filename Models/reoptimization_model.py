@@ -612,6 +612,9 @@ class ReoptModel:
                     ),
                 )
 
+            for i in nodes:
+                print(t[i].varName, t[i].x)
+
             print("Obj: %g" % m.objVal)
 
             """

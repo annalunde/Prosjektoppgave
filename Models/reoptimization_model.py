@@ -98,6 +98,7 @@ class ReoptModel:
             pickups_new,
             pickups,
             pickups_previous_not_rejected,
+            nodes_previous_not_rejected,
             nodes_depots,
             nodes_remaining,
             nodes_new,
@@ -135,8 +136,8 @@ class ReoptModel:
             u = m.addVars(nodes, name="u")
             d = m.addVars(pickups, name="d")
             s = m.addVars(pickups, vtype=GRB.BINARY, name="s")
-            z_plus = m.addVars(nodes_remaining, name="z+")
-            z_minus = m.addVars(nodes_remaining, name="z-")
+            z_plus = m.addVars(nodes_previous_not_rejected, name="z+")
+            z_minus = m.addVars(nodes_previous_not_rejected, name="z-")
             y = m.addVars(vehicles, vtype=GRB.BINARY, name="y")
 
             # OBJECTIVE FUNCTION
@@ -161,7 +162,10 @@ class ReoptModel:
                     quicksum(C_T * (l[i] + u[i]) for i in nodes)
                     + quicksum(C_F * d[i] for i in pickups)
                     + quicksum(C_R * s[i] for i in pickups)
-                    + quicksum(C_O * (z_plus[i] + z_minus[i]) for i in nodes_remaining)
+                    + quicksum(
+                        C_O * (z_plus[i] + z_minus[i])
+                        for i in nodes_previous_not_rejected
+                    )
                 ),
                 index=1,
             )
@@ -533,7 +537,10 @@ class ReoptModel:
             )
 
             m.addConstrs(
-                (T_O[i] - t[i] == z_plus[i] - z_minus[i] for i in nodes_remaining),
+                (
+                    T_O[i] - t[i] == z_plus[i] - z_minus[i]
+                    for i in nodes_previous_not_rejected
+                ),
                 name="TimeWindow5",
             )
 
@@ -616,6 +623,10 @@ class ReoptModel:
 
             operational = obj1.getValue()
             quality = obj2.getValue()
+            for i in nodes:
+                print(t[i].varName, t[i].x)
+
+            # print("Obj: %g" % m.objVal)
 
             """
             NOTE

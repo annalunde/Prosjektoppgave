@@ -48,9 +48,12 @@ class Updater:
         nodes_depots = [i for i in range(self.num_nodes_and_depots)]
         pickups_previous = [i for i in range(len(pickups) - 1)]
         pickups_previous_not_rejected = []
+        nodes_previous_not_rejected = []
         for i in pickups_previous:
             if i not in self.rejected:
                 pickups_previous_not_rejected.append(i)
+                nodes_previous_not_rejected.append(i)
+                nodes_previous_not_rejected.append(self.num_requests + i)
 
         # FETCH DATA
         if self.first:  # NOTE
@@ -266,6 +269,7 @@ class Updater:
             pickups_new,
             pickups,
             pickups_previous_not_rejected,
+            nodes_previous_not_rejected,
             nodes_depots,
             nodes_remaining,
             nodes_new,

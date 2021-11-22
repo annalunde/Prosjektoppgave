@@ -474,6 +474,7 @@ class InitialModel:
                 name="RideTime1",
             )
 
+            """
             # VALID INEQUALITIES
             m.addConstr(
                 (
@@ -530,10 +531,12 @@ class InitialModel:
                                 name="Subtour" + str(counter),
                             )
                             subtour = []
+            """
 
             # RUN MODEL
             m.optimize()
 
+            """
             for v in m.getVars():
                 if v.varName.startswith("t"):
                     continue
@@ -555,7 +558,11 @@ class InitialModel:
             for i in pickups:
                 print(d[i].varName, d[i].x)
 
+            for i in nodes:
+                print(t[i].varName, t[i].x)
+
             print("Obj: %g" % m.objVal)
+            
 
             """
             obj1 = m.getObjective(index=0)
@@ -568,7 +575,6 @@ class InitialModel:
             obj3 = obj1.getValue() + obj2.getValue()
             print("Total")
             print(obj3)
-            """
 
             # self.vizualize_route(results=m.getVars())
 

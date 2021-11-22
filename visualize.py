@@ -57,7 +57,7 @@ class Visualizer:
         data_size = len(data)
         counter = 1
         for index, row in data.iterrows():
-            if counter == 8:
+            if counter < 9:
                 # add starting location markers to the map
                 folium.CircleMarker(
                     location=(row[start_lat_col], row[start_long_col]),
@@ -94,7 +94,7 @@ class Visualizer:
                     weight=1,
                     fill=True,
                 ).add_to(folium_map)
-
+            
             if counter > 9:
                 # add starting location markers to the map
                 folium.CircleMarker(

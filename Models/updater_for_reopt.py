@@ -201,8 +201,9 @@ class Updater:
         # FIND T-VARIABLES TO FIXATE
         for t_i in self.route_plan["t"].keys():
             if (
-                pd.to_datetime(self.route_plan["t"][t_i], unit="h") <= time_request_L
-                and t_i not in self.rejected
+                pd.to_datetime(self.route_plan["t"][t_i], unit="h")
+                <= time_request_L
+                # and t_i not in self.rejected
             ):
                 c = None
                 if t_i > self.num_requests - 2:

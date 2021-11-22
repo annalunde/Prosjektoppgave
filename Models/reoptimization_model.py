@@ -572,7 +572,6 @@ class ReoptModel:
                 name="Rejection1",
             )
 
-            """NOTE: ADDED THIS CONSTRAINT TO SET s[i]=0 FOR ALL REQUESTS THAT HAVE PREVIOUSLY BEEN ACCEPTED"""
             m.addConstr(
                 (quicksum(s[i] for i in pickups_previous_not_rejected) == 0),
                 name="Rejection2",

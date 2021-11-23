@@ -10,8 +10,9 @@ from decouple import config
 from datetime import datetime, timedelta
 from models import *
 from models.initial_model import InitialModel
-from models.initial_model_validineq import InitialModel
+from models.initial_model_validineq import InitialModelValidIneq
 from models.reoptimization_model import ReoptModel
+from models.reoptimization_model_validineq import ReoptModelValidIneq
 
 
 def main(num_events, sleep, start_time, test_instance, valid_ineq):
@@ -40,15 +41,14 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq):
         first = True if i == 0 else False
         event = get_event(i, test_instance)
         num_requests += 1
-        reopt_model = 
+        reopt_model = (
             ReoptModelValidIneq(
                 initial_route_plan, event, num_requests, first, rejected
             )
             if valid_ineq
-            else ReoptModel(
-                initial_route_plan, event, num_requests, first, rejected
-            )
-        
+            else ReoptModel(initial_route_plan, event, num_requests, first, rejected)
+        )
+
         (
             reopt_plan,
             rejected,
@@ -64,7 +64,7 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq):
         runtime_track.append(
             [num_requests, (datetime.now() - start_time).total_seconds()]
         )
-        if i != num_events -1:
+        if i != num_events - 1:
             cumulative_z += single_z
 
     # df = pd.DataFrame(runtime_track, columns=["Number of Requests", "Solution Time"])
@@ -85,7 +85,7 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq):
         num_unused_vehicles,
     )
 
-    return operational, quality+cumulative_z
+    return operational, quality + cumulative_z
 
 
 def plot(df):
@@ -101,7 +101,7 @@ def plot(df):
 
 def get_event(i, test_instance):
     if test_instance:
-        df = pd.read_csv(config("data_path_test_instances_events")+str(test_instance)+".csv")
+        df = pd.read_csv(config("data_path_test_instances_events"))
         return df.iloc[i]
     else:
         df = pd.read_csv(config("data_path_events"))
@@ -112,7 +112,8 @@ if __name__ == "__main__":
     num_events = 5
     sleep = 0.5
     start_time = datetime.now()
-    test_instance = 1 # 2 or 3 # NOTE: update in init_config as well
+    # NOTE update test_instance nr in env
+    test_instance = True
     valid_inequalities = True
     operational, quality = main(
         num_events, sleep, start_time, test_instance, valid_inequalities

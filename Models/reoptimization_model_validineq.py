@@ -141,7 +141,7 @@ class ReoptModelValidIneq:
 
             # OBJECTIVE FUNCTION
             m.setObjectiveN(
-                self.beta
+                beta
                 * (
                     quicksum(
                         C_D * D_ij[i][j] * x[i, j, k]
@@ -156,7 +156,7 @@ class ReoptModelValidIneq:
             )
 
             m.setObjectiveN(
-                (1 - self.beta)
+                (1 - beta)
                 * (
                     quicksum(C_T * (l[i] + u[i]) for i in nodes)
                     + quicksum(C_F * d[i] for i in pickups)
@@ -513,7 +513,7 @@ class ReoptModelValidIneq:
             m.addConstr(
                 (
                     quicksum(x[i, j, k] for i in nodes for j in nodes for k in vehicles)
-                    <= num_nodes_and_depots + num_vehicles
+                    <= len(nodes_depots) + num_vehicles
                 ),
                 name="ValidInequality1",
             )
@@ -592,7 +592,7 @@ class ReoptModelValidIneq:
             """
 
             # print("Obj: %g" % m.objVal)
-            print(self.beta)
+            print(beta)
             obj1 = m.getObjective(index=0)
             print("Operational costs: ", obj1.getValue())
             obj2 = m.getObjective(index=1)

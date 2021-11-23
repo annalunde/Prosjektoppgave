@@ -8,7 +8,7 @@ from models.reoptimization_config import *
 
 
 # Sets
-n = 15  # number of pickup nodes
+n = 10  # number of pickup nodes
 num_nodes = 2 * n
 num_nodes_and_depots = (
     2 * num_vehicles + 2 * n
@@ -30,9 +30,7 @@ F = 0.5
 alpha = 0.5
 
 # Different parameters per node
-df = pd.read_csv(
-    config("data_path_test_instances_init" + str(test_instance) + ".csv"), nrows=n
-)
+df = pd.read_csv(config("data_path_test_instances_init"), nrows=n)
 
 # Load for each request
 L_S = df["Number of Passengers"].tolist()

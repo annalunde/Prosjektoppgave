@@ -77,8 +77,7 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq, total_time):
     df_runtime = pd.DataFrame(
         runtime_track, columns=["Number of Requests", "Solution Time"]
     )
-    # ANNA
-    plot(df_runtime)
+    # plot(df_runtime)
 
     print(
         "Service Rate Whole: ",
@@ -94,8 +93,9 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq, total_time):
         "Number of Vehicles Not Used: ",
         num_unused_vehicles,
     )
+    print("Runtime: ", df_runtime[-1])
 
-    return operational, quality + cumulative_z
+    return operational, quality + cumulative_z, df_runtime[-1]
 
 
 def plot(df):

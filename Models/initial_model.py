@@ -194,6 +194,34 @@ class InitialModel:
                             x[i, j, k].lb = 0
                             x[i, j, k].ub = 0
 
+            # not add swip-tour to node i from node j if that means node (j+n) cannot be reached in time
+            for k in vehicles:
+                for i in pickups:
+                    for j in pickups:
+                        if (
+                            T_H_L[j] + S + T_ij[j][i] + S + T_ij[i][j + n]
+                            > T_H_U[j + n]
+                        ):
+                            x[i, j + n, k].lb = 0
+                            x[i, j + n, k].ub = 0
+
+            # not add arc if route from node (i+n) to node j means that node (j+n) cannot be reached in time
+            for k in vehicles:
+                for i in pickups:
+                    for j in pickups:
+                        if (
+                            T_H_L[i]
+                            + S
+                            + T_ij[i][i + n]
+                            + S
+                            + T_ij[i + n][j]
+                            + S
+                            + T_ij[j][j + n]
+                            > T_H_U[j + n]
+                        ):
+                            x[i + n, j, k].lb = 0
+                            x[i + n, j, k].ub = 0
+
             # FLOW CONSTRAINTS
             m.addConstrs(
                 (

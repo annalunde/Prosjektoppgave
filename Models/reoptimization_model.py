@@ -238,6 +238,38 @@ class ReoptModel:
                             x[i, j, k].lb = 0
                             x[i, j, k].ub = 0
 
+            # not add swip-tour to node i from node j if that means node (j+n) cannot be reached in time
+            for k in vehicles:
+                for i in pickups:
+                    for j in pickups:
+                        if (
+                            T_H_L[j]
+                            + S
+                            + T_ij[j][i]
+                            + S
+                            + T_ij[i][j + self.num_requests]
+                            > T_H_U[j + self.num_requests]
+                        ):
+                            x[i, j + self.num_requests, k].lb = 0
+                            x[i, j + self.num_requests, k].ub = 0
+
+            # not add arc if route from node (i+n) to node j means that node (j+n) cannot be reached in time
+            for k in vehicles:
+                for i in pickups:
+                    for j in pickups:
+                        if (
+                            T_H_L[i]
+                            + S
+                            + T_ij[i][i + self.num_requests]
+                            + S
+                            + T_ij[i + self.num_requests][j]
+                            + S
+                            + T_ij[j][j + self.num_requests]
+                            > T_H_U[j + self.num_requests]
+                        ):
+                            x[i + self.num_requests, j, k].lb = 0
+                            x[i + self.num_requests, j, k].ub = 0
+
             # FIXATING VALUES
 
             # x values - outside time window

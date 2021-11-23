@@ -20,14 +20,11 @@ C_O = 60  # cost of deviation from original plan
 Q_S = 5
 Q_W = 1
 
-# beta for weighting operational vs quality of service
+# Weighting of Operational Costs vs Quality of Service
 beta = 0.5
 
 # Allowed excess ride time
 F = 0.5
-
-# Weighting of Operational Costs vs Quality of Service
-# beta = 0.2
 
 # Number of hours to open to reoptimize
 H = 0.5

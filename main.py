@@ -101,10 +101,10 @@ def plot(df):
 
 def get_event(i, test_instance):
     if test_instance:
-        df = pd.read_csv(config("data_path_test_instances"))
+        df = pd.read_csv(config("data_path_test_instances_events")+str(test_instance)+".csv")
         return df.iloc[i]
     else:
-        df = pd.read_csv(config("data_path_events")+str(test_instance)+".csv")
+        df = pd.read_csv(config("data_path_events"))
         return df.iloc[i]
 
 
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     num_events = 5
     sleep = 0.5
     start_time = datetime.now()
-    test_instance = 1 # 2 or 3
+    test_instance = 1 # 2 or 3 # NOTE: update in init_config as well
     valid_inequalities = True
     operational, quality = main(
         num_events, sleep, start_time, test_instance, valid_inequalities

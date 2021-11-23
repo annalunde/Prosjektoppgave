@@ -32,6 +32,7 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq):
     runtime_track.append([num_requests, (datetime.now() - start_time).total_seconds()])
     operational = None
     quality = None
+    cumulative_z = 0
 
     # Event Based Rerouting
     for i in range(num_events):
@@ -54,6 +55,7 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq):
             num_unused_vehicles,
             operational,
             quality,
+            single_z,
         ) = reopt_model.run_model()
         if i != num_events - 1:
             print("Waiting for new request")
@@ -62,6 +64,8 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq):
         runtime_track.append(
             [num_requests, (datetime.now() - start_time).total_seconds()]
         )
+        if i != num_events -1:
+            cumulative_z += single_z
 
     # df = pd.DataFrame(runtime_track, columns=["Number of Requests", "Solution Time"])
     # plot(df)
@@ -81,7 +85,7 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq):
         num_unused_vehicles,
     )
 
-    return operational, quality
+    return operational, quality+cumulative_z
 
 
 def plot(df):

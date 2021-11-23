@@ -603,6 +603,9 @@ class ReoptModelValidIneq:
 
             operational = obj1.getValue()
             quality = obj2.getValue()
+            single_z = quicksum(
+                C_O * (z_plus[i] + z_minus[i]) for i in nodes_previous_not_rejected
+            )
             for i in nodes:
                 print(t[i].varName, t[i].x)
 
@@ -635,8 +638,15 @@ class ReoptModelValidIneq:
                     == 1
                 ]
             )
-
-            return route_plan, rejected, num_not_used_vehicles, operational, quality
+            single_z = single_z.getValue()
+            return (
+                route_plan,
+                rejected,
+                num_not_used_vehicles,
+                operational,
+                quality,
+                single_z,
+            )
 
         except GurobiError as e:
             print("Error reported")

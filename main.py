@@ -10,10 +10,11 @@ from decouple import config
 from datetime import datetime, timedelta
 from models import *
 from models.initial_model import InitialModel
+from models.initial_model_validineq import InitialModel
 from models.reoptimization_model import ReoptModel
 
 
-def main(num_events, sleep, start_time, tuning, beta):
+def main(num_events, sleep, start_time, test_instance, valid_ineq):
     """
     This function performs a run for the DDDARP problem, where requests that are known in advance are planned and routed initially,
     as well as new requests are received throughout the day. When a new request arrives, a reoptimization model is utilized to first
@@ -24,7 +25,7 @@ def main(num_events, sleep, start_time, tuning, beta):
     # Initial Route Plan
     print("Running Initial Model")
     runtime_track = []
-    init_model = InitialModel()
+    init_model = InitialModelValidIneq() if valid_ineq else InitialModel()
     initial_route_plan = init_model.run_model()
     num_requests = init_model.get_n()
     rejected = []
@@ -36,14 +37,20 @@ def main(num_events, sleep, start_time, tuning, beta):
     for i in range(num_events):
         print("Event Based Reoptimization")
         first = True if i == 0 else False
-        event = get_event(i, tuning)
+        event = get_event(i, test_instance)
         num_requests += 1
-        reopt_model = ReoptModel(
-            initial_route_plan, event, num_requests, first, rejected, beta
-        )
+        reopt_model = 
+            ReoptModelValidIneq(
+                initial_route_plan, event, num_requests, first, rejected
+            )
+            if valid_ineq
+            else ReoptModel(
+                initial_route_plan, event, num_requests, first, rejected
+            )
+        
         (
             reopt_plan,
-            rejected_after,
+            rejected,
             num_unused_vehicles,
             operational,
             quality,
@@ -55,7 +62,6 @@ def main(num_events, sleep, start_time, tuning, beta):
         runtime_track.append(
             [num_requests, (datetime.now() - start_time).total_seconds()]
         )
-        rejected = rejected_after
 
     # df = pd.DataFrame(runtime_track, columns=["Number of Requests", "Solution Time"])
     # plot(df)
@@ -89,25 +95,21 @@ def plot(df):
     plt.show()
 
 
-def get_event(i, tuning):
-    if tuning:
-        df = pd.read_csv(config("data_path_tuning_events"))
+def get_event(i, test_instance):
+    if test_instance:
+        df = pd.read_csv(config("data_path_test_instances"))
         return df.iloc[i]
     else:
-        df = pd.read_csv(config("data_path_events"))
+        df = pd.read_csv(config("data_path_events")+str(test_instance)+".csv")
         return df.iloc[i]
 
 
 if __name__ == "__main__":
-    pareto = {}
-    beta = 0
-    while beta <= 0.9:
-        num_events = 10
-        sleep = 1
-        start_time = datetime.now()
-        tuning = True
-        operational, quality = main(num_events, sleep, start_time, tuning, beta)
-        pareto[beta] = (operational, quality)
-        beta += 0.1
-    with open("pareto.txt", "w") as file:
-        file.write(json.dumps(pareto))
+    num_events = 5
+    sleep = 0.5
+    start_time = datetime.now()
+    test_instance = 1 # 2 or 3
+    valid_inequalities = True
+    operational, quality = main(
+        num_events, sleep, start_time, test_instance, valid_inequalities
+    )

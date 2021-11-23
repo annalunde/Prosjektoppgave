@@ -8,7 +8,7 @@ from models.updater_for_reopt import *
 from models.updater_for_reopt import Updater
 
 
-class ReoptModel:
+class ReoptModelValidIneq:
     def __init__(self, current_route_plan, event, num_requests, first, rejected):
         self.model = "MIP 1"
         self.route_plan = current_route_plan
@@ -509,10 +509,65 @@ class ReoptModel:
                 name="Rejection2",
             )
 
+            # VALID INEQUALITIES
+            m.addConstr(
+                (
+                    quicksum(x[i, j, k] for i in nodes for j in nodes for k in vehicles)
+                    <= num_nodes_and_depots + num_vehicles
+                ),
+                name="ValidInequality1",
+            )
+
+            # SUBTOUR ELIMINATION SIZE 2
+            subtour = []
+            for i in nodes:
+                for j in nodes:
+                    if i < j:
+                        counter = 1
+                        subtour.append(i)
+                        subtour.append(j)
+
+                        m.addConstr(
+                            (
+                                quicksum(
+                                    x[i, j, k]
+                                    for i in subtour
+                                    for j in subtour
+                                    for k in vehicles
+                                )
+                                <= len(subtour) - 1
+                            ),
+                            name="Subtour" + str(counter),
+                        )
+                        subtour = []
+
+            # SUBTOUR ELIMINATION SIZE 3
+            subtour = []
+            for i in nodes:
+                for j in nodes:
+                    for e in nodes:
+                        if i < j and j < e:
+                            counter = 1
+                            subtour.append(i)
+                            subtour.append(j)
+                            subtour.append(e)
+
+                            m.addConstr(
+                                (
+                                    quicksum(
+                                        x[i, j, k]
+                                        for i in subtour
+                                        for j in subtour
+                                        for k in vehicles
+                                    )
+                                    <= len(subtour) - 1
+                                ),
+                                name="Subtour" + str(counter),
+                            )
+                            subtour = []
+
             # RUN MODEL
             m.optimize()
-            # m.computeIIS()
-            # m.write("model.ilp")
 
             print("New Event: ", self.num_requests - 1)
             for i in pickups_new:

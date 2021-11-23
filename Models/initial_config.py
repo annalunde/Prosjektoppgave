@@ -30,9 +30,7 @@ F = 0.5
 alpha = 0.5
 
 # Different parameters per node
-df = pd.read_csv(config("data_path_test_tuning"), nrows=n)
-# NOTE
-
+df = pd.read_csv(config("data_path_test_instances"), nrows=n)
 
 # Load for each request
 L_S = df["Number of Passengers"].tolist()

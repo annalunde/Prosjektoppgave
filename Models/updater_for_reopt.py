@@ -56,9 +56,9 @@ class Updater:
                 nodes_previous_not_rejected.append(self.num_requests + i)
 
         # FETCH DATA
-        if self.first:  # NOTE
+        if self.first:
             df = pd.read_csv(
-                config("data_path_test_tuning"), nrows=self.num_requests - 1
+                config("data_path_test_instances"), nrows=self.num_requests - 1
             )
             df = df.append(self.event, ignore_index=True)
             df.to_csv(

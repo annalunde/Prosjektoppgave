@@ -8,7 +8,7 @@ from models.reoptimization_config import *
 
 
 # Sets
-n = 10  # number of pickup nodes
+n = 15  # number of pickup nodes
 num_nodes = 2 * n
 num_nodes_and_depots = (
     2 * num_vehicles + 2 * n

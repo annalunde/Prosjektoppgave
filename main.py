@@ -15,7 +15,7 @@ from models.reoptimization_model import ReoptModel
 from models.reoptimization_model_validineq import ReoptModelValidIneq
 
 
-def main(num_events, sleep, start_time, test_instance, valid_ineq):
+def main(num_events, sleep, start_time, test_instance, valid_ineq, total_time):
     """
     This function performs a run for the DDDARP problem, where requests that are known in advance are planned and routed initially,
     as well as new requests are received throughout the day. When a new request arrives, a reoptimization model is utilized to first
@@ -34,6 +34,8 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq):
     operational = None
     quality = None
     cumulative_z = 0
+    running_time = datetime.now()
+    time_left = total_time - (datetime.now() - start_time).total_seconds()
 
     # Event Based Rerouting
     for i in range(num_events):
@@ -43,10 +45,12 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq):
         num_requests += 1
         reopt_model = (
             ReoptModelValidIneq(
-                initial_route_plan, event, num_requests, first, rejected
+                initial_route_plan, event, num_requests, first, rejected, time_left
             )
             if valid_ineq
-            else ReoptModel(initial_route_plan, event, num_requests, first, rejected)
+            else ReoptModel(
+                initial_route_plan, event, num_requests, first, rejected, time_left
+            )
         )
 
         (
@@ -67,8 +71,14 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq):
         if i != num_events - 1:
             cumulative_z += single_z
 
-    # df = pd.DataFrame(runtime_track, columns=["Number of Requests", "Solution Time"])
-    # plot(df)
+        time_left = time_left - (datetime.now() - running_time).total_seconds()
+        running_time = datetime.now()
+
+    df_runtime = pd.DataFrame(
+        runtime_track, columns=["Number of Requests", "Solution Time"]
+    )
+    # ANNA
+    plot(df_runtime)
 
     print(
         "Service Rate Whole: ",
@@ -110,11 +120,12 @@ def get_event(i, test_instance):
 
 if __name__ == "__main__":
     num_events = 5
-    sleep = 0.5
+    sleep = 0.01
     start_time = datetime.now()
-    # NOTE update test_instance nr in env
+    total_time = 60 * 60
+    # NOTE update test_instance nr in env & n in init_config
     test_instance = True
-    valid_inequalities = True
+    valid_inequalities = False
     operational, quality = main(
-        num_events, sleep, start_time, test_instance, valid_inequalities
+        num_events, sleep, start_time, test_instance, valid_inequalities, total_time
     )

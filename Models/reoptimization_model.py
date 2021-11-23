@@ -9,7 +9,7 @@ from models.updater_for_reopt import Updater
 
 
 class ReoptModel:
-    def __init__(self, current_route_plan, event, num_requests, first, rejected):
+    def __init__(self, current_route_plan, event, num_requests, first, rejected, time):
         self.model = "MIP 1"
         self.route_plan = current_route_plan
         self.event = event
@@ -17,6 +17,7 @@ class ReoptModel:
         self.updater = Updater(
             self.route_plan, self.event, self.num_requests, first, rejected
         )
+        self.time = time
 
     def vizualize_route(self, results, num_nodes_and_depots):
         dot = graphviz.Digraph(engine="neato")
@@ -120,6 +121,7 @@ class ReoptModel:
         try:
             m = gp.Model("mip1")
             m.setParam("NumericFocus", 3)
+            m.setParam("TimeLimit", self.time)
 
             dropoffs = [i for i in range(self.num_requests, 2 * self.num_requests)]
             vehicles = [i for i in range(num_vehicles)]

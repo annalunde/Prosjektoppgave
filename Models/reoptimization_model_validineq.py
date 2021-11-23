@@ -552,7 +552,7 @@ class ReoptModelValidIneq:
                 name="ValidInequality1",
             )
 
-            # SUBTOUR ELIMINATION SIZE 2
+            """ # SUBTOUR ELIMINATION SIZE 2
             subtour = []
             for i in nodes:
                 for j in nodes:
@@ -599,7 +599,7 @@ class ReoptModelValidIneq:
                                 name="Subtour" + str(counter),
                             )
                             subtour = []
-
+            """
             # RUN MODEL
             m.optimize()
 

@@ -125,7 +125,7 @@ if __name__ == "__main__":
     total_time = 60 * 60
     # NOTE update test_instance nr in env & n in init_config
     test_instance = True
-    valid_inequalities = False
+    valid_inequalities = True
     operational, quality = main(
         num_events, sleep, start_time, test_instance, valid_inequalities, total_time
     )

@@ -27,7 +27,7 @@ beta = 0.5
 F = 0.5
 
 # Number of hours to open to reoptimize
-H = 0.5
+H = 0.25
 
 # Service time
 S = timedelta(minutes=2).total_seconds() / 3600

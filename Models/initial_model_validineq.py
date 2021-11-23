@@ -448,6 +448,7 @@ class InitialModelValidIneq:
                 name="ValidInequality1",
             )
 
+            """
             # SUBTOUR ELIMINATION SIZE 2
             subtour = []
             for i in nodes:
@@ -471,6 +472,7 @@ class InitialModelValidIneq:
                         )
                         subtour = []
 
+            
             # SUBTOUR ELIMINATION SIZE 3
             subtour = []
             for i in nodes:
@@ -495,6 +497,7 @@ class InitialModelValidIneq:
                                 name="Subtour" + str(counter),
                             )
                             subtour = []
+            """
 
             # RUN MODEL
             m.optimize()

@@ -456,7 +456,9 @@ class InitialModelValidIneq:
             """
 
             # SUBTOUR ELIMINATION SIZE 2
+            counter = 0
             for _, row in df.iterrows():
+                counter += 1
                 row = row.toList()
                     m.addConstr(
                         (

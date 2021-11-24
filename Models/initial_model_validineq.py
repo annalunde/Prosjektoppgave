@@ -8,8 +8,9 @@ from models.reoptimization_config import num_vehicles
 
 
 class InitialModelValidIneq:
-    def __init__(self):
+    def __init__(self, subtour):
         self.model = "MIP 1"
+        self.subtour = subtour
 
     def get_n(self):
         return n
@@ -87,12 +88,16 @@ class InitialModelValidIneq:
         try:
             m = gp.Model("mip1")
             m.setParam("NumericFocus", 3)
+            m.setParam("TimeLimit", 3600)
 
             pickups = [i for i in range(n)]
             dropoffs = [i for i in range(n, 2 * n)]
             nodes = [i for i in range(2 * n)]
             nodes_depots = [i for i in range(num_nodes_and_depots)]
             vehicles = [i for i in range(num_vehicles)]
+
+            if subtour:
+                df_sub = pd.read_csv(config("data_path_subtour_elimination"))
 
             # Create variables
             x = m.addVars(
@@ -439,65 +444,32 @@ class InitialModelValidIneq:
                 name="RideTime1",
             )
 
+            """
             # VALID INEQUALITIES
             m.addConstr(
                 (
-                    quicksum(x[i, j, k] for i in nodes for j in nodes for k in vehicles)
-                    <= num_nodes_and_depots + num_vehicles
+                    quicksum(x[i, j, k] for i in nodes_depots for j in nodes_depots for k in vehicles)
+                    <= num_nodes + num_vehicles
                 ),
                 name="ValidInequality1",
             )
-
             """
+
             # SUBTOUR ELIMINATION SIZE 2
-            subtour = []
-            for i in nodes:
-                for j in nodes:
-                    if i < j:
-                        counter = 1
-                        subtour.append(i)
-                        subtour.append(j)
-
-                        m.addConstr(
-                            (
-                                quicksum(
-                                    x[i, j, k]
-                                    for i in subtour
-                                    for j in subtour
-                                    for k in vehicles
-                                )
-                                <= len(subtour) - 1
-                            ),
-                            name="Subtour" + str(counter),
-                        )
-                        subtour = []
-
-            
-            # SUBTOUR ELIMINATION SIZE 3
-            subtour = []
-            for i in nodes:
-                for j in nodes:
-                    for e in nodes:
-                        if i < j and j < e:
-                            counter = 1
-                            subtour.append(i)
-                            subtour.append(j)
-                            subtour.append(e)
-
-                            m.addConstr(
-                                (
-                                    quicksum(
-                                        x[i, j, k]
-                                        for i in subtour
-                                        for j in subtour
-                                        for k in vehicles
-                                    )
-                                    <= len(subtour) - 1
-                                ),
-                                name="Subtour" + str(counter),
+            for _, row in df.iterrows():
+                row = row.toList()
+                    m.addConstr(
+                        (
+                            quicksum(
+                                x[i, j, k]
+                                for i in row
+                                for j in row
+                                for k in vehicles
                             )
-                            subtour = []
-            """
+                            <= len(row) - 1
+                        ),
+                        name="Subtour" + str(counter),
+                    )
 
             # RUN MODEL
             m.optimize()

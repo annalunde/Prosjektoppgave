@@ -87,6 +87,7 @@ class InitialModel:
         try:
             m = gp.Model("mip1")
             m.setParam("NumericFocus", 3)
+            m.setParam("TimeLimit", 3600)
 
             pickups = [i for i in range(n)]
             dropoffs = [i for i in range(n, 2 * n)]

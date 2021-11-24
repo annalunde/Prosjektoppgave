@@ -542,64 +542,22 @@ class ReoptModelValidIneq:
                 (quicksum(s[i] for i in pickups_previous_not_rejected) == 0),
                 name="Rejection2",
             )
-
+            """
             # VALID INEQUALITIES
             m.addConstr(
                 (
-                    quicksum(x[i, j, k] for i in nodes for j in nodes for k in vehicles)
-                    <= len(nodes_depots) + num_vehicles
+                    quicksum(
+                        x[i, j, k]
+                        for i in nodes_depots
+                        for j in nodes_depots
+                        for k in vehicles
+                    )
+                    <= len(nodes) + num_vehicles
                 ),
                 name="ValidInequality1",
             )
-
-            """ # SUBTOUR ELIMINATION SIZE 2
-            subtour = []
-            for i in nodes:
-                for j in nodes:
-                    if i < j:
-                        counter = 1
-                        subtour.append(i)
-                        subtour.append(j)
-
-                        m.addConstr(
-                            (
-                                quicksum(
-                                    x[i, j, k]
-                                    for i in subtour
-                                    for j in subtour
-                                    for k in vehicles
-                                )
-                                <= len(subtour) - 1
-                            ),
-                            name="Subtour" + str(counter),
-                        )
-                        subtour = []
-
-            # SUBTOUR ELIMINATION SIZE 3
-            subtour = []
-            for i in nodes:
-                for j in nodes:
-                    for e in nodes:
-                        if i < j and j < e:
-                            counter = 1
-                            subtour.append(i)
-                            subtour.append(j)
-                            subtour.append(e)
-
-                            m.addConstr(
-                                (
-                                    quicksum(
-                                        x[i, j, k]
-                                        for i in subtour
-                                        for j in subtour
-                                        for k in vehicles
-                                    )
-                                    <= len(subtour) - 1
-                                ),
-                                name="Subtour" + str(counter),
-                            )
-                            subtour = []
             """
+
             # RUN MODEL
             m.optimize()
 

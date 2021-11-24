@@ -15,7 +15,7 @@ from models.reoptimization_model import ReoptModel
 from models.reoptimization_model_validineq import ReoptModelValidIneq
 
 
-def main(num_events, sleep, start_time, test_instance, valid_ineq, total_time):
+def main(num_events, sleep, start_time, test_instance, valid_ineq, total_time, subtour):
     """
     This function performs a run for the DDDARP problem, where requests that are known in advance are planned and routed initially,
     as well as new requests are received throughout the day. When a new request arrives, a reoptimization model is utilized to first
@@ -26,7 +26,7 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq, total_time):
     # Initial Route Plan
     print("Running Initial Model")
     runtime_track = []
-    init_model = InitialModelValidIneq() if valid_ineq else InitialModel()
+    init_model = InitialModelValidIneq(subtour) if valid_ineq else InitialModel()
     initial_route_plan = init_model.run_model()
     num_requests = init_model.get_n()
     rejected = []
@@ -45,7 +45,12 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq, total_time):
         num_requests += 1
         reopt_model = (
             ReoptModelValidIneq(
-                initial_route_plan, event, num_requests, first, rejected, time_left
+                initial_route_plan,
+                event,
+                num_requests,
+                first,
+                rejected,
+                time_left,
             )
             if valid_ineq
             else ReoptModel(
@@ -126,6 +131,13 @@ if __name__ == "__main__":
     # NOTE update test_instance nr in env & n in init_config
     test_instance = True
     valid_inequalities = True
+    subtour = True
     operational, quality = main(
-        num_events, sleep, start_time, test_instance, valid_inequalities, total_time
+        num_events,
+        sleep,
+        start_time,
+        test_instance,
+        valid_inequalities,
+        total_time,
+        subtour,
     )

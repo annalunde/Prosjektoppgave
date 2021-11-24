@@ -5,10 +5,10 @@ from decouple import config
 import numpy as np
 from datetime import datetime, timedelta
 from models.reoptimization_config import *
+from main_config import *
 
 
 # Sets
-n = 10  # number of pickup nodes
 num_nodes = 2 * n
 num_nodes_and_depots = (
     2 * num_vehicles + 2 * n
@@ -30,7 +30,7 @@ F = 0.5
 alpha = 0.5
 
 # Different parameters per node
-df = pd.read_csv(config("data_path_test_instances_init"), nrows=n)
+df = pd.read_csv(initial_events_path, nrows=n)
 
 # Load for each request
 L_S = df["Number of Passengers"].tolist()

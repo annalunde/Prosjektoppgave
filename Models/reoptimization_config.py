@@ -2,11 +2,8 @@
 import numpy as np
 from datetime import datetime, timedelta
 from scipy.spatial import distance
-from models.initial_config import *
+from main_config import *
 
-
-# Vehicles
-num_vehicles = 3  # this also gives the number of vehicles for initial model
 
 # Costs and penalties
 C_D = 1  # per vehicle

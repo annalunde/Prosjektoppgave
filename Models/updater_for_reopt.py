@@ -5,6 +5,7 @@ from decouple import config
 from gurobipy import GRB
 from gurobipy import GurobiError
 from gurobipy import quicksum
+from main_config import *
 from math import radians, degrees
 from models.reoptimization_config import *
 from sklearn.metrics.pairwise import haversine_distances
@@ -57,9 +58,7 @@ class Updater:
 
         # FETCH DATA
         if self.first:
-            df = pd.read_csv(
-                config("data_path_test_instances_init"), nrows=self.num_requests - 1
-            )
+            df = pd.read_csv(initial_events_path, nrows=self.num_requests - 1)
             df = df.append(self.event, ignore_index=True)
             df.to_csv(
                 "Data/Running/data_requests_for:" + str(self.num_requests) + ".csv"

@@ -1,9 +1,12 @@
 \ Model mip1_copy
 \ LP format - for model browsing. Use MPS format to capture full model detail.
-Minimize
- 
+Minimize multi-objectives
+  OBJ0: Priority=0 Weight=1 AbsTol=1e-06 RelTol=0
+  
+  OBJ1: Priority=0 Weight=1 AbsTol=1e-06 RelTol=0
+  
 Subject To
- TimeWindow2.1[10]: t[10] >= 1.6334469e+09
+ TimeWindow2.1[1]: t[1] >= 454473.9166666667
 Bounds
- -infinity <= t[10] <= 1.6206423253007121e+09
+ -infinity <= t[1] <= 449435.9166666667
 End

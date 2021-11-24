@@ -9,13 +9,23 @@ from gurobipy import quicksum
 from decouple import config
 from datetime import datetime, timedelta
 from models import *
+from main_config import *
 from models.initial_model import InitialModel
 from models.initial_model_validineq import InitialModelValidIneq
 from models.reoptimization_model import ReoptModel
 from models.reoptimization_model_validineq import ReoptModelValidIneq
 
 
-def main(num_events, sleep, start_time, test_instance, valid_ineq, total_time, subtour):
+def main(
+    num_events,
+    sleep,
+    start_time,
+    test_instance,
+    valid_ineq,
+    total_time,
+    subtour,
+    complexity_instance,
+):
     """
     This function performs a run for the DDDARP problem, where requests that are known in advance are planned and routed initially,
     as well as new requests are received throughout the day. When a new request arrives, a reoptimization model is utilized to first
@@ -34,25 +44,20 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq, total_time, s
     operational = None
     quality = None
     cumulative_z = 0
-    running_time = datetime.now()
-    time_left = total_time - (datetime.now() - start_time).total_seconds()
 
     # Event Based Rerouting
     for i in range(num_events):
         print("Event Based Reoptimization")
         first = True if i == 0 else False
-        event = get_event(i, test_instance)
+        event = get_event(i, test_instance, complexity_instance)
         num_requests += 1
         reopt_model = (
             ReoptModelValidIneq(
-                initial_route_plan, event, num_requests, first, rejected, time_left
+                initial_route_plan, event, num_requests, first, rejected
             )
             if valid_ineq
-            else ReoptModel(
-                initial_route_plan, event, num_requests, first, rejected, time_left
-            )
+            else ReoptModel(initial_route_plan, event, num_requests, first, rejected)
         )
-
         (
             reopt_plan,
             rejected,
@@ -70,9 +75,6 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq, total_time, s
         )
         if i != num_events - 1:
             cumulative_z += single_z
-
-        time_left = time_left - (datetime.now() - running_time).total_seconds()
-        running_time = datetime.now()
 
     df_runtime = pd.DataFrame(
         runtime_track, columns=["Number of Requests", "Solution Time"]
@@ -109,9 +111,12 @@ def plot(df):
     plt.show()
 
 
-def get_event(i, test_instance):
+def get_event(i, test_instance, complexity_instance):
     if test_instance:
         df = pd.read_csv(config("data_path_test_instances_events"))
+        return df.iloc[i]
+    if complexity_instance:
+        df = pd.read_csv(config("data_path_complexity_events"))
         return df.iloc[i]
     else:
         df = pd.read_csv(config("data_path_events"))
@@ -119,15 +124,7 @@ def get_event(i, test_instance):
 
 
 if __name__ == "__main__":
-    num_events = 5
-    sleep = 0.01
-    start_time = datetime.now()
-    total_time = 60 * 60
-    # NOTE update test_instance nr in env & n in init_config
-    test_instance = True
-    valid_inequalities = True
-    subtour = True
-    operational, quality = main(
+    operational, quality, runtime = main(
         num_events,
         sleep,
         start_time,
@@ -135,4 +132,5 @@ if __name__ == "__main__":
         valid_inequalities,
         total_time,
         subtour,
+        complexity_instance,
     )

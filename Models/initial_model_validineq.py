@@ -445,17 +445,20 @@ class InitialModelValidIneq:
                 name="RideTime1",
             )
 
-            """
             # VALID INEQUALITIES
             m.addConstr(
                 (
-                    quicksum(x[i, j, k] for i in nodes_depots for j in nodes_depots for k in vehicles)
+                    quicksum(
+                        x[i, j, k]
+                        for i in nodes_depots
+                        for j in nodes_depots
+                        for k in vehicles
+                    )
                     <= num_nodes + num_vehicles
                 ),
                 name="ValidInequality1",
             )
             """
-
             # SUBTOUR ELIMINATION SIZE 2
             counter = 0
 
@@ -469,6 +472,27 @@ class InitialModelValidIneq:
                     ),
                     name="Subtour" + str(counter),
                 )
+
+            # SYMMETRY BREAKING
+            # costs used by vehicle k must be larger than for vehicle (k+1)
+            m.addConstrs(
+                (
+                    quicksum(
+                        C_D * D_ij[i][j] * x[i, j, k]
+                        for i in nodes_depots
+                        for j in nodes_depots
+                    )
+                    >= quicksum(
+                        C_D * D_ij[i][j] * x[i, j, k + 1]
+                        for i in nodes_depots
+                        for j in nodes_depots
+                    )
+                    for k in vehicles
+                    if k != num_vehicles - 1
+                ),
+                name="SymmetryCost",
+            )
+            """
 
             # RUN MODEL
             m.optimize()

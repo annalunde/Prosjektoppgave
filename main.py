@@ -22,7 +22,6 @@ def main(
     start_time,
     test_instance,
     valid_ineq,
-    total_time,
     subtour,
     complexity_instance,
 ):
@@ -79,25 +78,26 @@ def main(
     df_runtime = pd.DataFrame(
         runtime_track, columns=["Number of Requests", "Solution Time"]
     )
+    df_runtime.to_csv("Runtime/runtime_{}.csv".format(num_vehicles))
     # plot(df_runtime)
 
     print(
         "Service Rate Whole: ",
         str(round(100 * (num_requests - len(rejected)) / (num_requests), 2)) + "%",
     )
+    if num_events > 0:
+        print(
+            "Service Rate of New Events: ",
+            str(round(100 * (num_events - len(rejected)) / (num_events), 2)) + "%",
+        )
 
-    print(
-        "Service Rate of New Events: ",
-        str(round(100 * (num_events - len(rejected)) / (num_events), 2)) + "%",
-    )
-
-    print(
-        "Number of Vehicles Not Used: ",
-        num_unused_vehicles,
-    )
+        print(
+            "Number of Vehicles Not Used: ",
+            num_unused_vehicles,
+        )
     print("Runtime: ", df_runtime.tail(1))
 
-    return operational, quality + cumulative_z, df_runtime.tail(1)
+    return operational, quality + cumulative_z, df_runtime
 
 
 def plot(df):
@@ -130,7 +130,6 @@ if __name__ == "__main__":
         start_time,
         test_instance,
         valid_inequalities,
-        total_time,
         subtour,
         complexity_instance,
     )

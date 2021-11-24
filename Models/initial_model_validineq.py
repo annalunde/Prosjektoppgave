@@ -96,8 +96,9 @@ class InitialModelValidIneq:
             nodes_depots = [i for i in range(num_nodes_and_depots)]
             vehicles = [i for i in range(num_vehicles)]
 
-            if subtour:
+            if self.subtour:
                 df_sub = pd.read_csv(config("data_path_subtour_elimination"))
+                df_sub.drop("Minutes", inplace=True, axis=1)
 
             # Create variables
             x = m.addVars(
@@ -457,21 +458,17 @@ class InitialModelValidIneq:
 
             # SUBTOUR ELIMINATION SIZE 2
             counter = 0
-            for _, row in df.iterrows():
+
+            for _, row in df_sub.iterrows():
                 counter += 1
-                row = row.toList()
-                    m.addConstr(
-                        (
-                            quicksum(
-                                x[i, j, k]
-                                for i in row
-                                for j in row
-                                for k in vehicles
-                            )
-                            <= len(row) - 1
-                        ),
-                        name="Subtour" + str(counter),
-                    )
+                row = row.values.tolist()
+                m.addConstr(
+                    (
+                        quicksum(x[i, j, k] for i in row for j in row for k in vehicles)
+                        <= len(row) - 1
+                    ),
+                    name="Subtour" + str(counter),
+                )
 
             # RUN MODEL
             m.optimize()

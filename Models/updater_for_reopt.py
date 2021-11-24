@@ -11,15 +11,12 @@ from sklearn.metrics.pairwise import haversine_distances
 
 
 class Updater:
-    def __init__(
-        self, current_route_plan, event, num_requests, first, rejected, subtour
-    ):
+    def __init__(self, current_route_plan, event, num_requests, first, rejected):
         self.route_plan = current_route_plan  # dictionary with variable values
         self.event = event  # dataframe row
         self.num_requests = num_requests
         self.first = first
         self.rejected = rejected
-        self.subtour = subtour
 
     def update(self):
         pickups_remaining = []  # set of remaining pick-up nodes

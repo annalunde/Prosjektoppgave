@@ -45,12 +45,7 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq, total_time, s
         num_requests += 1
         reopt_model = (
             ReoptModelValidIneq(
-                initial_route_plan,
-                event,
-                num_requests,
-                first,
-                rejected,
-                time_left,
+                initial_route_plan, event, num_requests, first, rejected, time_left
             )
             if valid_ineq
             else ReoptModel(
@@ -98,9 +93,9 @@ def main(num_events, sleep, start_time, test_instance, valid_ineq, total_time, s
         "Number of Vehicles Not Used: ",
         num_unused_vehicles,
     )
-    print("Runtime: ", df_runtime[-1])
+    print("Runtime: ", df_runtime.tail(1))
 
-    return operational, quality + cumulative_z, df_runtime[-1]
+    return operational, quality + cumulative_z, df_runtime.tail(1)
 
 
 def plot(df):

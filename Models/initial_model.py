@@ -199,6 +199,22 @@ class InitialModel:
                             x[i, j, k].lb = 0
                             x[i, j, k].ub = 0
 
+            # not add swip-tour to node i from node j if that means node (j+n) cannot be reached in time
+            for k in vehicles:
+                for i in pickups:
+                    for j in pickups:
+                        if T_H_L[j] + S + T_ij[j][i] + S + T_ij[i][j+n] > T_H_U[j+n]:
+                            x[i, j + n, k].lb = 0
+                            x[i, j + n, k].ub = 0
+
+            # not add arc if route from node (i+n) to node j means that node (j+n) cannot be reached in time
+            for k in vehicles:
+                for i in pickups:
+                    for j in pickups:
+                        if T_H_L[i] + S + T_ij[i][i+n] + S + T_ij[i+n][j] + S + T_ij[j][j+n] > T_H_U[j+n]:
+                            x[i + n, j, k].lb = 0
+                            x[i + n, j, k].ub = 0
+
             # FLOW CONSTRAINTS
             m.addConstrs(
                 (
@@ -479,21 +495,21 @@ class InitialModel:
                 name="RideTime1",
             )
 
-            '''
+
             # VALID INEQUALITIES
             m.addConstr(
                 (
                     quicksum(
                         x[i, j, k]
-                        for i in nodes
-                        for j in nodes
+                        for i in nodes_depots
+                        for j in nodes_depots
                         for k in vehicles
                     )
-                    <= num_nodes_and_depots + num_vehicles
+                    <= num_nodes + num_vehicles
                 ),
                 name="ValidInequality1"
             )
-
+            '''
             # SUBTOUR ELIMINATION SIZE 2
             subtour = []
             for i in nodes:
@@ -533,7 +549,42 @@ class InitialModel:
                             )
                             subtour = []
             '''
+            '''
+            # SYMMETRY BREAKING CONSTRAINTS
+            # number of arcs for vehicle k must be larger than for vehicle (k+1)
 
+            m.addConstrs(
+                (
+                quicksum(x[i, j, k] for i in nodes_depots for j in nodes_depots) >=
+                quicksum(x[i, j, k+1] for i in nodes_depots for j in nodes_depots)
+                for k in vehicles
+                if k != num_vehicles - 1
+                ),
+                name="SymmetryArcs",
+            )
+            
+            # time used by vehicle k must be larger than for vehicle (k+1)
+            m.addConstrs(
+                (
+                    quicksum(T_ij[i][j] * x[i, j, k] for i in nodes_depots for j in nodes_depots) >=
+                    quicksum(T_ij[i][j] * x[i, j, k + 1] for i in nodes_depots for j in nodes_depots)
+                    for k in vehicles
+                    if k != num_vehicles - 1
+                ),
+                name="SymmetryTime",
+            )
+            
+            # costs used by vehicle k must be larger than for vehicle (k+1)
+            m.addConstrs(
+                (
+                    quicksum(C_D * D_ij[i][j] * x[i, j, k] for i in nodes_depots for j in nodes_depots) >=
+                    quicksum(C_D * D_ij[i][j] * x[i, j, k + 1] for i in nodes_depots for j in nodes_depots)
+                    for k in vehicles
+                    if k != num_vehicles - 1
+                ),
+                name="SymmetryCost",
+            )
+            '''
             # RUN MODEL
             m.optimize()
 

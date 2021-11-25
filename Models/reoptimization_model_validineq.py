@@ -10,14 +10,21 @@ from models.updater_for_reopt import Updater
 
 class ReoptModelValidIneq:
     def __init__(
-        self, current_route_plan, event, num_requests, first, rejected, num_vehicles
+        self, current_route_plan, event, num_requests, first, rejected, num_vehicles, H
     ):
         self.model = "MIP 1"
         self.route_plan = current_route_plan
         self.event = event
         self.num_requests = num_requests
+        self.H = H
         self.updater = Updater(
-            self.route_plan, self.event, self.num_requests, first, rejected, num_vehicles
+            self.route_plan,
+            self.event,
+            self.num_requests,
+            first,
+            rejected,
+            num_vehicles,
+            H,
         )
         self.num_vehicles = num_vehicles
 

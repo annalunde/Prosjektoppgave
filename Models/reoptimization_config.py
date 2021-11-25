@@ -23,9 +23,6 @@ beta = 0.5
 # Allowed excess ride time
 F = 0.5
 
-# Number of hours to open to reoptimize
-H = 0.25
-
 # Service time
 S = timedelta(minutes=2).total_seconds() / 3600
 

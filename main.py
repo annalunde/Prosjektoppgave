@@ -27,6 +27,7 @@ def main(
     num_vehicles,
     n,
     runtime_instance,
+    H,
 ):
     """
     This function performs a run for the DDDARP problem, where requests that are known in advance are planned and routed initially,
@@ -50,6 +51,7 @@ def main(
     operational = None
     quality = 0
     cumulative_z = 0
+    r_init = 0
 
     # Event Based Rerouting
     for i in range(num_events):
@@ -59,10 +61,16 @@ def main(
         num_requests += 1
         reopt_model = (
             ReoptModelValidIneq(
-                initial_route_plan, event, num_requests, first, rejected, num_vehicles
+                initial_route_plan,
+                event,
+                num_requests,
+                first,
+                rejected,
+                num_vehicles,
+                H,
             )
             if valid_ineq
-            else ReoptModel(initial_route_plan, event, num_requests, first, rejected)
+            else ReoptModel(initial_route_plan, event, num_requests, first, rejected, H)
         )
         (
             reopt_plan,
@@ -76,17 +84,19 @@ def main(
             print("Waiting for new request")
         time.sleep(sleep)
         initial_route_plan = reopt_plan
+        rej = True if len(rejected) > r_init else False
+        r_init = len(rejected)
         runtime_track.append(
-            [num_requests, (datetime.now() - start_time).total_seconds()]
+            [num_requests, (datetime.now() - start_time).total_seconds(), rej]
         )
         if i != num_events - 1:
             cumulative_z += single_z
 
     df_runtime = pd.DataFrame(
-        runtime_track, columns=["Number of Requests", "Solution Time"]
+        runtime_track, columns=["Number of Requests", "Solution Time", "Rejected"]
     )
     # if n == 1:
-    df_runtime.to_csv("Runtime/runtime_reopt_{}.csv".format(num_vehicles))
+    df_runtime.to_csv("Runtime/runtime_{}.csv".format(H))
     """
     else:
         df_total = pd.read_csv("Runtime/runtime_{}.csv".format(num_vehicles))
@@ -140,9 +150,10 @@ def get_event(i, test_instance, complexity_instance, runtime_instance):
 
 
 if __name__ == "__main__":
-    for v in vehicles_set:
-        num_vehicles = v
-        num_events = 19
+    H = 0.001  # Number of hours to open to reoptimize
+    while H <= 3.1:
+        num_vehicles = 3
+        num_events = 20
         n = 10  # number of pickup nodes
         operational, quality, runtime = main(
             num_events,
@@ -155,4 +166,6 @@ if __name__ == "__main__":
             num_vehicles,
             n,
             runtime_instance,
+            H,
         )
+        H += 0.25

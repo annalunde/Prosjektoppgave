@@ -13,7 +13,7 @@ from sklearn.metrics.pairwise import haversine_distances
 
 class Updater:
     def __init__(
-        self, current_route_plan, event, num_requests, first, rejected, num_vehicles
+        self, current_route_plan, event, num_requests, first, rejected, num_vehicles, H
     ):
         self.route_plan = current_route_plan  # dictionary with variable values
         self.event = event  # dataframe row
@@ -21,6 +21,7 @@ class Updater:
         self.first = first
         self.rejected = rejected
         self.num_vehicles = num_vehicles
+        self.H = H
 
     def update(self):
         pickups_remaining = []  # set of remaining pick-up nodes
@@ -84,10 +85,10 @@ class Updater:
             if pd.isna(self.event["Requested Pickup Time"])
             else time_request
         )
-        time_request_U = time_request + timedelta(hours=H)
+        time_request_U = time_request + timedelta(hours=self.H)
         time_request_L = (
-            time_request - timedelta(hours=H)
-            if (time_request - timedelta(hours=H)) > time_now
+            time_request - timedelta(hours=self.H)
+            if (time_request - timedelta(hours=self.H)) > time_now
             else time_now
         )
 

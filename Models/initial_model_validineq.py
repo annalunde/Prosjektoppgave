@@ -627,9 +627,9 @@ class InitialModelValidIneq:
                 print(t[i].varName, t[i].x)
 
             print("Obj: %g" % m.objVal)
-            
 
             """
+
             obj1 = m.getObjective(index=0)
             print("Operational costs")
             print(obj1.getValue())
@@ -649,7 +649,27 @@ class InitialModelValidIneq:
             route_plan["q_S"] = {k: v.X for k, v in q_S.items()}
             route_plan["q_W"] = {k: v.X for k, v in q_W.items()}
 
-            return route_plan
+            unused_vehicles = [
+                k
+                for k in vehicles
+                if route_plan["x"][
+                    (
+                        2 * (self.n) + k,
+                        2 * (self.n) + k + self.num_vehicles,
+                        k,
+                    )
+                ]
+                == 1
+            ]
+
+            obj1 = m.getObjective(index=0)
+            print("Operational costs: ", obj1.getValue())
+            obj2 = m.getObjective(index=1)
+            print("Quality of service: ", obj2.getValue())
+            operational = obj1.getValue()
+            quality = obj2.getValue()
+
+            return route_plan, unused_vehicles, operational, quality
 
         except GurobiError as e:
             print("Error reported")

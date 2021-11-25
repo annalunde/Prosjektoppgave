@@ -10,7 +10,6 @@ C_D = 1  # per vehicle
 C_F = 60
 C_T = 60
 C_R = 110  # lost revenue from not serving a request
-C_K = 105  # cost of using vehicle k
 C_O = 60  # cost of deviation from original plan
 
 # Capacity per vehicle

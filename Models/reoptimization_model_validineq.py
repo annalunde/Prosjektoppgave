@@ -10,7 +10,15 @@ from models.updater_for_reopt import Updater
 
 class ReoptModelValidIneq:
     def __init__(
-        self, current_route_plan, event, num_requests, first, rejected, num_vehicles, H
+        self,
+        current_route_plan,
+        event,
+        num_requests,
+        first,
+        rejected,
+        num_vehicles,
+        H,
+        C_K,
     ):
         self.model = "MIP 1"
         self.route_plan = current_route_plan
@@ -27,6 +35,7 @@ class ReoptModelValidIneq:
             H,
         )
         self.num_vehicles = num_vehicles
+        self.C_K = C_K
 
     def vizualize_route(self, results, num_nodes_and_depots):
         dot = graphviz.Digraph(engine="neato")
@@ -100,7 +109,7 @@ class ReoptModelValidIneq:
 
         dot.render(filename="route.gv", cleanup=True, view=True)
 
-    def run_model(self):
+    def run_model(self, unused_vehicles, fixate_v):
         # update sets with new request
         (
             pickups_remaining,
@@ -130,6 +139,7 @@ class ReoptModelValidIneq:
         try:
             m = gp.Model("mip1")
             m.setParam("NumericFocus", 3)
+            m.setParam("TimeLimit", 2500)
 
             dropoffs = [i for i in range(self.num_requests, 2 * self.num_requests)]
             vehicles = [i for i in range(self.num_vehicles)]
@@ -160,7 +170,7 @@ class ReoptModelValidIneq:
                         for k in vehicles
                         if j != (2 * self.num_requests + k + self.num_vehicles)
                     )
-                    + quicksum(C_K * y[k] for k in vehicles)
+                    + quicksum(self.C_K * y[k] for k in vehicles)
                 ),
                 index=0,
             )
@@ -293,6 +303,11 @@ class ReoptModelValidIneq:
             for f_t in fixate_t:
                 t[f_t].lb = fixate_t[f_t]
                 t[f_t].ub = fixate_t[f_t]
+
+            # vehicles not used initially but earlier reopt event
+            for f_v in fixate_v:
+                y[f_v].lb = 1
+                y[f_v].ub = 1
 
             # rejected requests in previous plans
             for i in rejected:
@@ -557,6 +572,17 @@ class ReoptModelValidIneq:
                 name="Rejection2",
             )
 
+            # UNUSED VEHICLES CONSTRAINTS
+            if len(unused_vehicles) != 0:
+                m.addConstrs(
+                    (
+                        quicksum(x[i, j, k] for i in nodes for j in nodes)
+                        <= len(nodes) * y[k]
+                        for k in unused_vehicles
+                    ),
+                    name="UnusedVehicles",
+                )
+
             # VALID INEQUALITIES
             m.addConstr(
                 (
@@ -629,28 +655,33 @@ class ReoptModelValidIneq:
             route_plan["q_S"] = {k: v.X for k, v in q_S.items()}
             route_plan["q_W"] = {k: v.X for k, v in q_W.items()}
 
-            num_not_used_vehicles = len(
-                [
-                    k
-                    for k in vehicles
-                    if route_plan["x"][
-                        (
-                            2 * (self.num_requests - 1) + k,
-                            2 * (self.num_requests - 1) + k + self.num_vehicles,
-                            k,
-                        )
-                    ]
-                    == 1
+            not_used_vehicles = [
+                k
+                for k in vehicles
+                if route_plan["x"][
+                    (
+                        2 * (self.num_requests) + k,
+                        2 * (self.num_requests) + k + self.num_vehicles,
+                        k,
+                    )
                 ]
-            )
+                == 1
+            ]
+
+            fixate_v = fixate_v + [
+                v for v in unused_vehicles if v not in not_used_vehicles
+            ]
+
             single_z = single_z.getValue()
             return (
                 route_plan,
                 rejected,
-                num_not_used_vehicles,
+                len(not_used_vehicles),
                 operational,
                 quality,
                 single_z,
+                not_used_vehicles,
+                fixate_v,
             )
 
         except GurobiError as e:

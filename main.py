@@ -28,6 +28,7 @@ def main(
     n,
     runtime_instance,
     H,
+    C_K,
 ):
     """
     This function performs a run for the DDDARP problem, where requests that are known in advance are planned and routed initially,
@@ -44,14 +45,24 @@ def main(
         if valid_ineq
         else InitialModel(num_vehicles, n)
     )
-    initial_route_plan = init_model.run_model()
+    initial_route_plan, unused_vehicles = init_model.run_model()
     num_requests = init_model.get_n()
     rejected = []
-    runtime_track.append([num_requests, (datetime.now() - start_time).total_seconds()])
+    fixate_v = []
+    runtime_track.append(
+        [
+            num_requests,
+            (datetime.now() - start_time).total_seconds(),
+            False,
+            operational,
+            quality,
+        ]
+    )
     operational = None
     quality = 0
     cumulative_z = 0
     r_init = 0
+    print("Unused vehicles after initial: ", unused_vehicles)
 
     # Event Based Rerouting
     for i in range(num_events):
@@ -68,6 +79,7 @@ def main(
                 rejected,
                 num_vehicles,
                 H,
+                C_K,
             )
             if valid_ineq
             else ReoptModel(initial_route_plan, event, num_requests, first, rejected, H)
@@ -79,7 +91,9 @@ def main(
             operational,
             quality,
             single_z,
-        ) = reopt_model.run_model()
+            unused_vehicles,
+            fixate_v,
+        ) = reopt_model.run_model(unused_vehicles, fixate_v)
         if i != num_events - 1:
             print("Waiting for new request")
         time.sleep(sleep)
@@ -87,16 +101,31 @@ def main(
         rej = True if len(rejected) > r_init else False
         r_init = len(rejected)
         runtime_track.append(
-            [num_requests, (datetime.now() - start_time).total_seconds(), rej]
+            [
+                num_requests,
+                (datetime.now() - start_time).total_seconds(),
+                rej,
+                operational,
+                (quality + single_z),
+            ]
         )
+        print("Unused vehicles after event: ", unused_vehicles)
+        print("Fixate_v: ", fixate_v)
         if i != num_events - 1:
             cumulative_z += single_z
 
     df_runtime = pd.DataFrame(
-        runtime_track, columns=["Number of Requests", "Solution Time", "Rejected"]
+        runtime_track,
+        columns=[
+            "Number of Requests",
+            "Solution Time",
+            "Rejected",
+            "Operational",
+            "Quality",
+        ],
     )
     # if n == 1:
-    df_runtime.to_csv("Runtime/runtime_{}.csv".format(H))
+    df_runtime.to_csv("Runtime/runtime_vehicles_{}.csv".format(C_K))
     """
     else:
         df_total = pd.read_csv("Runtime/runtime_{}.csv".format(num_vehicles))
@@ -150,9 +179,11 @@ def get_event(i, test_instance, complexity_instance, runtime_instance):
 
 
 if __name__ == "__main__":
-    H = 0.001  # Number of hours to open to reoptimize
-    while H <= 3.1:
-        num_vehicles = 3
+    C_K = 5  # cost of using vehicle k
+    while C_K <= 110:
+        H = 0.25  # Number of hours to open to reoptimize
+        start_time = datetime.now()
+        num_vehicles = 10
         num_events = 20
         n = 10  # number of pickup nodes
         operational, quality, runtime = main(
@@ -167,5 +198,6 @@ if __name__ == "__main__":
             n,
             runtime_instance,
             H,
+            C_K,
         )
-        H += 0.25
+        C_K += 5

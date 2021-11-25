@@ -9,14 +9,17 @@ from models.updater_for_reopt import Updater
 
 
 class ReoptModelValidIneq:
-    def __init__(self, current_route_plan, event, num_requests, first, rejected):
+    def __init__(
+        self, current_route_plan, event, num_requests, first, rejected, num_vehicles
+    ):
         self.model = "MIP 1"
         self.route_plan = current_route_plan
         self.event = event
         self.num_requests = num_requests
         self.updater = Updater(
-            self.route_plan, self.event, self.num_requests, first, rejected
+            self.route_plan, self.event, self.num_requests, first, rejected, num_vehicles
         )
+        self.num_vehicles = num_vehicles
 
     def vizualize_route(self, results, num_nodes_and_depots):
         dot = graphviz.Digraph(engine="neato")
@@ -122,7 +125,7 @@ class ReoptModelValidIneq:
             m.setParam("NumericFocus", 3)
 
             dropoffs = [i for i in range(self.num_requests, 2 * self.num_requests)]
-            vehicles = [i for i in range(num_vehicles)]
+            vehicles = [i for i in range(self.num_vehicles)]
 
             # Create variables
             x = m.addVars(
@@ -148,7 +151,7 @@ class ReoptModelValidIneq:
                         for i in nodes_depots
                         for j in nodes_depots
                         for k in vehicles
-                        if j != (2 * self.num_requests + k + num_vehicles)
+                        if j != (2 * self.num_requests + k + self.num_vehicles)
                     )
                     + quicksum(C_K * y[k] for k in vehicles)
                 ),
@@ -176,8 +179,8 @@ class ReoptModelValidIneq:
             for v in vehicles:
                 for k in vehicles:
                     for i in pickups:
-                        x[i, 2 * self.num_requests + v + num_vehicles, k].lb = 0
-                        x[i, 2 * self.num_requests + v + num_vehicles, k].ub = 0
+                        x[i, 2 * self.num_requests + v + self.num_vehicles, k].lb = 0
+                        x[i, 2 * self.num_requests + v + self.num_vehicles, k].ub = 0
 
             # cannot drive from origins to drop-offs
             for v in vehicles:
@@ -209,8 +212,8 @@ class ReoptModelValidIneq:
             for v in vehicles:
                 for k in vehicles:
                     for j in nodes_depots:
-                        x[2 * self.num_requests + v + num_vehicles, j, k].lb = 0
-                        x[2 * self.num_requests + v + num_vehicles, j, k].ub = 0
+                        x[2 * self.num_requests + v + self.num_vehicles, j, k].lb = 0
+                        x[2 * self.num_requests + v + self.num_vehicles, j, k].ub = 0
 
             # cannot drive from origins that are not their own
             for v in vehicles:
@@ -225,8 +228,12 @@ class ReoptModelValidIneq:
                 for k in vehicles:
                     if k != v:
                         for i in nodes_depots:
-                            x[i, 2 * self.num_requests + v + num_vehicles, k].lb = 0
-                            x[i, 2 * self.num_requests + v + num_vehicles, k].ub = 0
+                            x[
+                                i, 2 * self.num_requests + v + self.num_vehicles, k
+                            ].lb = 0
+                            x[
+                                i, 2 * self.num_requests + v + self.num_vehicles, k
+                            ].ub = 0
 
             # not add arc if vehicle cannot reach node j from node i within the time window of j
             for k in vehicles:
@@ -306,7 +313,7 @@ class ReoptModelValidIneq:
             m.addConstrs(
                 (
                     quicksum(
-                        x[i, 2 * self.num_requests + k + num_vehicles, k]
+                        x[i, 2 * self.num_requests + k + self.num_vehicles, k]
                         for i in nodes_depots
                     )
                     == 1
@@ -394,7 +401,8 @@ class ReoptModelValidIneq:
             m.addConstrs(
                 (
                     q_S[i, k]
-                    <= Q_S * (1 - x[i, 2 * self.num_requests + k + num_vehicles, k])
+                    <= Q_S
+                    * (1 - x[i, 2 * self.num_requests + k + self.num_vehicles, k])
                     for i in dropoffs
                     for k in vehicles
                 ),
@@ -457,7 +465,8 @@ class ReoptModelValidIneq:
             m.addConstrs(
                 (
                     q_W[i, k]
-                    <= Q_W * (1 - x[i, 2 * self.num_requests + k + num_vehicles, k])
+                    <= Q_W
+                    * (1 - x[i, 2 * self.num_requests + k + self.num_vehicles, k])
                     for i in dropoffs
                     for k in vehicles
                 ),
@@ -550,7 +559,7 @@ class ReoptModelValidIneq:
                         for j in nodes_depots
                         for k in vehicles
                     )
-                    <= len(nodes) + num_vehicles
+                    <= len(nodes) + self.num_vehicles
                 ),
                 name="ValidInequality1",
             )
@@ -620,7 +629,7 @@ class ReoptModelValidIneq:
                     if route_plan["x"][
                         (
                             2 * (self.num_requests - 1) + k,
-                            2 * (self.num_requests - 1) + k + num_vehicles,
+                            2 * (self.num_requests - 1) + k + self.num_vehicles,
                             k,
                         )
                     ]

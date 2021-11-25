@@ -24,6 +24,9 @@ def main(
     valid_ineq,
     subtour,
     complexity_instance,
+    num_vehicles,
+    n,
+    runtime_instance,
 ):
     """
     This function performs a run for the DDDARP problem, where requests that are known in advance are planned and routed initially,
@@ -35,24 +38,28 @@ def main(
     # Initial Route Plan
     print("Running Initial Model")
     runtime_track = []
-    init_model = InitialModelValidIneq(subtour) if valid_ineq else InitialModel()
+    init_model = (
+        InitialModelValidIneq(subtour, num_vehicles, n)
+        if valid_ineq
+        else InitialModel(num_vehicles, n)
+    )
     initial_route_plan = init_model.run_model()
     num_requests = init_model.get_n()
     rejected = []
     runtime_track.append([num_requests, (datetime.now() - start_time).total_seconds()])
     operational = None
-    quality = None
+    quality = 0
     cumulative_z = 0
 
     # Event Based Rerouting
     for i in range(num_events):
         print("Event Based Reoptimization")
         first = True if i == 0 else False
-        event = get_event(i, test_instance, complexity_instance)
+        event = get_event(i, test_instance, complexity_instance, runtime_instance)
         num_requests += 1
         reopt_model = (
             ReoptModelValidIneq(
-                initial_route_plan, event, num_requests, first, rejected
+                initial_route_plan, event, num_requests, first, rejected, num_vehicles
             )
             if valid_ineq
             else ReoptModel(initial_route_plan, event, num_requests, first, rejected)
@@ -78,7 +85,13 @@ def main(
     df_runtime = pd.DataFrame(
         runtime_track, columns=["Number of Requests", "Solution Time"]
     )
-    df_runtime.to_csv("Runtime/runtime_{}.csv".format(num_vehicles))
+    # if n == 1:
+    df_runtime.to_csv("Runtime/runtime_reopt_{}.csv".format(num_vehicles))
+    """
+    else:
+        df_total = pd.read_csv("Runtime/runtime_{}.csv".format(num_vehicles))
+        df_total = df_total.append(df_runtime, ignore_index=True)
+        df_total.to_csv("Runtime/runtime_{}.csv".format(num_vehicles))"""
     # plot(df_runtime)
 
     print(
@@ -111,12 +124,15 @@ def plot(df):
     plt.show()
 
 
-def get_event(i, test_instance, complexity_instance):
+def get_event(i, test_instance, complexity_instance, runtime_instance):
     if test_instance:
         df = pd.read_csv(config("data_path_test_instances_events"))
         return df.iloc[i]
     if complexity_instance:
         df = pd.read_csv(config("data_path_complexity_events"))
+        return df.iloc[i]
+    if runtime_instance:
+        df = pd.read_csv(config("data_path_runtime_events"))
         return df.iloc[i]
     else:
         df = pd.read_csv(config("data_path_events"))
@@ -124,12 +140,19 @@ def get_event(i, test_instance, complexity_instance):
 
 
 if __name__ == "__main__":
-    operational, quality, runtime = main(
-        num_events,
-        sleep,
-        start_time,
-        test_instance,
-        valid_inequalities,
-        subtour,
-        complexity_instance,
-    )
+    for v in vehicles_set:
+        num_vehicles = v
+        num_events = 19
+        n = 10  # number of pickup nodes
+        operational, quality, runtime = main(
+            num_events,
+            sleep,
+            start_time,
+            test_instance,
+            valid_inequalities,
+            subtour,
+            complexity_instance,
+            num_vehicles,
+            n,
+            runtime_instance,
+        )

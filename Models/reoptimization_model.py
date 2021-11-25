@@ -9,13 +9,21 @@ from models.updater_for_reopt import Updater
 
 
 class ReoptModel:
-    def __init__(self, current_route_plan, event, num_requests, first, rejected):
+    def __init__(
+        self, current_route_plan, event, num_requests, first, rejected, num_vehicles
+    ):
         self.model = "MIP 1"
         self.route_plan = current_route_plan
         self.event = event
         self.num_requests = num_requests
+        self.num_vehicles = num_vehicles
         self.updater = Updater(
-            self.route_plan, self.event, self.num_requests, first, rejected
+            self.route_plan,
+            self.event,
+            self.num_requests,
+            first,
+            rejected,
+            num_vehicles,
         )
 
     def vizualize_route(self, results, num_nodes_and_depots):

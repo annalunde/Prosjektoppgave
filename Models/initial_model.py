@@ -4,12 +4,13 @@ from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
 from models.initial_config import *
-from models.reoptimization_config import num_vehicles
 
 
 class InitialModel:
-    def __init__(self):
+    def __init__(self, num_vehicles, n):
         self.model = "MIP 1"
+        self.n = n
+        self.num_vehicles = num_vehicles
 
     def get_n(self):
         return n

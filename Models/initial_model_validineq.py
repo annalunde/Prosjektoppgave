@@ -4,16 +4,20 @@ from gurobipy import GurobiError
 from gurobipy import quicksum
 import graphviz
 from models.initial_config import *
-from models.reoptimization_config import num_vehicles
+from main_config import *
+
+# from models.reoptimization_config import num_vehicles
 
 
 class InitialModelValidIneq:
-    def __init__(self, subtour):
+    def __init__(self, subtour, num_vehicles, n):
         self.model = "MIP 1"
         self.subtour = subtour
+        self.num_vehicles = num_vehicles
+        self.n = n
 
     def get_n(self):
-        return n
+        return self.n
 
     def vizualize_route(self, results):
         dot = graphviz.Digraph(engine="neato")
@@ -35,8 +39,6 @@ class InitialModelValidIneq:
             "mediumseagreen",
             "navy",
         ]
-
-        nodes = [i for i in range(num_nodes_and_depots)]
 
         for node in nodes:
             # nodes
@@ -88,13 +90,112 @@ class InitialModelValidIneq:
         try:
             m = gp.Model("mip1")
             m.setParam("NumericFocus", 3)
-            m.setParam("TimeLimit", 3600)
+            m.setParam("TimeLimit", 2500)
 
-            pickups = [i for i in range(n)]
-            dropoffs = [i for i in range(n, 2 * n)]
-            nodes = [i for i in range(2 * n)]
+            # Sets
+            num_nodes = 2 * self.n
+            num_nodes_and_depots = (
+                2 * self.num_vehicles + 2 * self.n
+            )  # num_vehicles is fetched from reopt config
+
+            # Different parameters per node
+
+            df = pd.read_csv(initial_events_path, nrows=self.n)
+
+            # Load for each request
+            L_S = df["Number of Passengers"].tolist()
+            L_W = df["Wheelchair"].tolist()
+
+            # Lat and lon for each request
+            origin_lat_lon = list(
+                zip(np.deg2rad(df["Origin Lat"]), np.deg2rad(df["Origin Lng"]))
+            )
+            destination_lat_lon = list(
+                zip(
+                    np.deg2rad(df["Destination Lat"]), np.deg2rad(df["Destination Lng"])
+                )
+            )
+            request_lat_lon = origin_lat_lon + destination_lat_lon
+
+            # Positions in degrees
+            origin_lat_lon_deg = list(zip(df["Origin Lat"], df["Origin Lng"]))
+            destination_lat_lon_deg = list(
+                zip(df["Destination Lat"], df["Destination Lng"])
+            )
+            request_lat_lon_deg = origin_lat_lon_deg + destination_lat_lon_deg
+
+            vehicle_lat_lon = []
+            vehicle_lat_lon_deg = []
+
+            # Origins for each vehicle
+            for i in range(self.num_vehicles):
+                vehicle_lat_lon.append(
+                    (radians(59.946829115276145), radians(10.779841653639243))
+                )
+                vehicle_lat_lon_deg.append((59.946829115276145, 10.779841653639243))
+
+            # Destinations for each vehicle
+            for i in range(self.num_vehicles):
+                vehicle_lat_lon.append(
+                    (radians(59.946829115276145), radians(10.779841653639243))
+                )
+                vehicle_lat_lon_deg.append((59.946829115276145, 10.779841653639243))
+
+            # Positions
+            lat_lon = request_lat_lon + vehicle_lat_lon
+            Position = request_lat_lon_deg + vehicle_lat_lon_deg
+
+            # Distance matrix
+            D_ij = haversine_distances(lat_lon, lat_lon) * 6371
+
+            # Travel time matrix
+            speed = 40
+
+            T_ij = np.empty(
+                shape=(num_nodes_and_depots, num_nodes_and_depots), dtype=timedelta
+            )
+
+            for i in range(num_nodes_and_depots):
+                for j in range(num_nodes_and_depots):
+                    T_ij[i][j] = (
+                        timedelta(hours=(D_ij[i][j] / speed)).total_seconds() / 3600
+                    )
+
+            # Time windows
+            T_S_L = (
+                pd.to_datetime(df["T_S_L_P"]).tolist()
+                + pd.to_datetime(df["T_S_L_D"]).tolist()
+            )
+            T_S_U = (
+                pd.to_datetime(df["T_S_U_P"]).tolist()
+                + pd.to_datetime(df["T_S_U_D"]).tolist()
+            )
+            T_H_L = (
+                pd.to_datetime(df["T_H_L_P"]).tolist()
+                + pd.to_datetime(df["T_H_L_D"]).tolist()
+            )
+            T_H_U = (
+                pd.to_datetime(df["T_H_U_P"]).tolist()
+                + pd.to_datetime(df["T_H_U_D"]).tolist()
+            )
+
+            T_S_L = [i.timestamp() / 3600 for i in T_S_L]
+            T_S_U = [i.timestamp() / 3600 for i in T_S_U]
+            T_H_L = [i.timestamp() / 3600 for i in T_H_L]
+            T_H_U = [i.timestamp() / 3600 for i in T_H_U]
+
+            # Big M
+            M_ij = np.empty(shape=(num_nodes, num_nodes), dtype=datetime)
+            for i in range(num_nodes):
+                for j in range(num_nodes):
+                    M_ij[i][j] = T_H_U[i] + T_ij[i][j] - T_H_L[j]
+
+            pickups = [i for i in range(self.n)]
+            dropoffs = [i for i in range(self.n, 2 * self.n)]
+            nodes = [i for i in range(2 * self.n)]
             nodes_depots = [i for i in range(num_nodes_and_depots)]
-            vehicles = [i for i in range(num_vehicles)]
+            vehicles = [i for i in range(self.num_vehicles)]
+            n = self.n
 
             if self.subtour:
                 df_sub = pd.read_csv(config("data_path_subtour_elimination"))
@@ -120,7 +221,7 @@ class InitialModelValidIneq:
                     for i in nodes_depots
                     for j in nodes_depots
                     for k in vehicles
-                    if j != (2 * n + k + num_vehicles)
+                    if j != (2 * self.n + k + self.num_vehicles)
                 ),
                 index=0,
             )
@@ -140,15 +241,15 @@ class InitialModelValidIneq:
             for v in vehicles:
                 for k in vehicles:
                     for i in pickups:
-                        x[i, 2 * n + v + num_vehicles, k].lb = 0
-                        x[i, 2 * n + v + num_vehicles, k].ub = 0
+                        x[i, 2 * self.n + v + self.num_vehicles, k].lb = 0
+                        x[i, 2 * self.n + v + self.num_vehicles, k].ub = 0
 
             # cannot drive from origins to drop-offs
             for v in vehicles:
                 for k in vehicles:
                     for j in dropoffs:
-                        x[2 * n + v, j, k].lb = 0
-                        x[2 * n + v, j, k].ub = 0
+                        x[2 * self.n + v, j, k].lb = 0
+                        x[2 * self.n + v, j, k].ub = 0
 
             # cannot drive from own drop-off to own pick-up
             for k in vehicles:
@@ -173,8 +274,8 @@ class InitialModelValidIneq:
             for v in vehicles:
                 for k in vehicles:
                     for j in nodes_depots:
-                        x[2 * n + v + num_vehicles, j, k].lb = 0
-                        x[2 * n + v + num_vehicles, j, k].ub = 0
+                        x[2 * self.n + v + self.num_vehicles, j, k].lb = 0
+                        x[2 * self.n + v + self.num_vehicles, j, k].ub = 0
 
             # cannot drive from origins that are not their own
             for v in vehicles:
@@ -189,8 +290,8 @@ class InitialModelValidIneq:
                 for k in vehicles:
                     if k != v:
                         for i in nodes_depots:
-                            x[i, 2 * n + v + num_vehicles, k].lb = 0
-                            x[i, 2 * n + v + num_vehicles, k].ub = 0
+                            x[i, 2 * self.n + v + self.num_vehicles, k].lb = 0
+                            x[i, 2 * self.n + v + self.num_vehicles, k].ub = 0
 
             # not add arc if vehicle cannot reach node j from node i within the time window of j
             for k in vehicles:
@@ -247,7 +348,10 @@ class InitialModelValidIneq:
 
             m.addConstrs(
                 (
-                    quicksum(x[i, 2 * n + k + num_vehicles, k] for i in nodes_depots)
+                    quicksum(
+                        x[i, 2 * self.n + k + self.num_vehicles, k]
+                        for i in nodes_depots
+                    )
                     == 1
                     for k in vehicles
                 ),
@@ -332,7 +436,7 @@ class InitialModelValidIneq:
 
             m.addConstrs(
                 (
-                    q_S[i, k] <= Q_S * (1 - x[i, 2 * n + k + num_vehicles, k])
+                    q_S[i, k] <= Q_S * (1 - x[i, 2 * self.n + k + self.num_vehicles, k])
                     for i in dropoffs
                     for k in vehicles
                 ),
@@ -395,7 +499,7 @@ class InitialModelValidIneq:
 
             m.addConstrs(
                 (
-                    q_W[i, k] <= Q_W * (1 - x[i, 2 * n + k + num_vehicles, k])
+                    q_W[i, k] <= Q_W * (1 - x[i, 2 * self.n + k + self.num_vehicles, k])
                     for i in dropoffs
                     for k in vehicles
                 ),
@@ -454,7 +558,7 @@ class InitialModelValidIneq:
                         for j in nodes_depots
                         for k in vehicles
                     )
-                    <= num_nodes + num_vehicles
+                    <= num_nodes + self.num_vehicles
                 ),
                 name="ValidInequality1",
             )

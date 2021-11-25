@@ -12,12 +12,15 @@ from sklearn.metrics.pairwise import haversine_distances
 
 
 class Updater:
-    def __init__(self, current_route_plan, event, num_requests, first, rejected):
+    def __init__(
+        self, current_route_plan, event, num_requests, first, rejected, num_vehicles
+    ):
         self.route_plan = current_route_plan  # dictionary with variable values
         self.event = event  # dataframe row
         self.num_requests = num_requests
         self.first = first
         self.rejected = rejected
+        self.num_vehicles = num_vehicles
 
     def update(self):
         pickups_remaining = []  # set of remaining pick-up nodes
@@ -35,7 +38,7 @@ class Updater:
 
         # Sets
         self.num_nodes = 2 * self.num_requests
-        self.num_nodes_and_depots = 2 * num_vehicles + 2 * self.num_requests
+        self.num_nodes_and_depots = 2 * self.num_vehicles + 2 * self.num_requests
 
         # CREATE NEW SETS
         pickups_new.append(self.num_requests - 1)
@@ -45,7 +48,7 @@ class Updater:
         # CREATE ALL SETS
         pickups = [i for i in range(self.num_requests)]
         nodes = [i for i in range(2 * self.num_requests)]
-        vehicles = [i for i in range(num_vehicles)]
+        vehicles = [i for i in range(self.num_vehicles)]
         nodes_depots = [i for i in range(self.num_nodes_and_depots)]
         pickups_previous = [i for i in range(len(pickups) - 1)]
         pickups_previous_not_rejected = []
@@ -144,7 +147,7 @@ class Updater:
 
         vehicle_lat_lon = []
 
-        for item in range(num_vehicles):
+        for item in range(self.num_vehicles):
             vehicle_lat_lon.append(
                 (radians(59.946829115276145), radians(10.779841653639243))
             )
@@ -155,14 +158,14 @@ class Updater:
             if self.route_plan["x"][
                 (
                     2 * (self.num_requests - 1) + k,
-                    2 * (self.num_requests - 1) + k + num_vehicles,
+                    2 * (self.num_requests - 1) + k + self.num_vehicles,
                     k,
                 )
             ]
             == 1
         ]
 
-        for item in range(num_vehicles):
+        for item in range(self.num_vehicles):
             vehicle_lat_lon.append(
                 (radians(59.946829115276145), radians(10.779841653639243))
             )

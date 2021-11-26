@@ -109,7 +109,7 @@ class ReoptModelValidIneq:
 
         dot.render(filename="route.gv", cleanup=True, view=True)
 
-    def run_model(self, unused_vehicles, fixate_v):
+    def run_model(self, unused_vehicles):
         # update sets with new request
         (
             pickups_remaining,
@@ -303,11 +303,6 @@ class ReoptModelValidIneq:
             for f_t in fixate_t:
                 t[f_t].lb = fixate_t[f_t]
                 t[f_t].ub = fixate_t[f_t]
-
-            # vehicles not used initially but earlier reopt event
-            for f_v in fixate_v:
-                y[f_v].lb = 1
-                y[f_v].ub = 1
 
             # rejected requests in previous plans
             for i in rejected:
@@ -572,17 +567,6 @@ class ReoptModelValidIneq:
                 name="Rejection2",
             )
 
-            # UNUSED VEHICLES CONSTRAINTS
-            if len(unused_vehicles) != 0:
-                m.addConstrs(
-                    (
-                        quicksum(x[i, j, k] for i in nodes for j in nodes)
-                        <= len(nodes) * y[k]
-                        for k in unused_vehicles
-                    ),
-                    name="UnusedVehicles",
-                )
-
             # VALID INEQUALITIES
             m.addConstr(
                 (
@@ -668,11 +652,23 @@ class ReoptModelValidIneq:
                 == 1
             ]
 
-            fixate_v = fixate_v + [
-                v for v in unused_vehicles if v not in not_used_vehicles
-            ]
-
             single_z = single_z.getValue()
+
+            ride_sharing_sum = 0
+            counter = 0
+            for i in nodes_depots:
+                for j in vehicles:
+                    if q_S[i, j].x >= 0.9:
+                        ride_sharing_sum += q_S[i, j].x
+                        counter += 1
+
+            ride_sharing = round(ride_sharing_sum / counter, 2)
+
+            t_min = min(route_plan["t"].values())
+            t_max = max(route_plan["t"].values())
+
+            productivity = round(ride_sharing_sum / (t_max - t_min), 2)
+
             return (
                 route_plan,
                 rejected,
@@ -681,7 +677,8 @@ class ReoptModelValidIneq:
                 quality,
                 single_z,
                 not_used_vehicles,
-                fixate_v,
+                ride_sharing,
+                productivity,
             )
 
         except GurobiError as e:

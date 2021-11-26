@@ -45,10 +45,16 @@ def main(
         if valid_ineq
         else InitialModel(num_vehicles, n)
     )
-    initial_route_plan, unused_vehicles = init_model.run_model()
+    (
+        initial_route_plan,
+        unused_vehicles,
+        operational,
+        quality,
+        ride_sharing,
+        productivity,
+    ) = init_model.run_model()
     num_requests = init_model.get_n()
     rejected = []
-    fixate_v = []
     runtime_track.append(
         [
             num_requests,
@@ -56,6 +62,8 @@ def main(
             False,
             operational,
             quality,
+            ride_sharing,
+            productivity,
         ]
     )
     operational = None
@@ -92,8 +100,9 @@ def main(
             quality,
             single_z,
             unused_vehicles,
-            fixate_v,
-        ) = reopt_model.run_model(unused_vehicles, fixate_v)
+            ride_sharing,
+            productivity,
+        ) = reopt_model.run_model(unused_vehicles)
         if i != num_events - 1:
             print("Waiting for new request")
         time.sleep(sleep)
@@ -107,10 +116,11 @@ def main(
                 rej,
                 operational,
                 (quality + single_z),
+                ride_sharing,
+                productivity,
             ]
         )
         print("Unused vehicles after event: ", unused_vehicles)
-        print("Fixate_v: ", fixate_v)
         if i != num_events - 1:
             cumulative_z += single_z
 
@@ -122,10 +132,12 @@ def main(
             "Rejected",
             "Operational",
             "Quality",
+            "Ride Sharing",
+            "Productivity",
         ],
     )
     # if n == 1:
-    df_runtime.to_csv("Runtime/runtime_vehicles_{}.csv".format(C_K))
+    df_runtime.to_csv("Economic/ride_sharing_{}.csv".format(num_vehicles))
     """
     else:
         df_total = pd.read_csv("Runtime/runtime_{}.csv".format(num_vehicles))
@@ -179,11 +191,12 @@ def get_event(i, test_instance, complexity_instance, runtime_instance):
 
 
 if __name__ == "__main__":
-    C_K = 5  # cost of using vehicle k
-    while C_K <= 110:
-        H = 0.25  # Number of hours to open to reoptimize
+    vehicles_set = [2, 3, 4]
+    C_K = 0  # cost of using vehicle k
+    H = 0.25  # Number of hours to open to reoptimize
+    for v in vehicles_set:
         start_time = datetime.now()
-        num_vehicles = 10
+        num_vehicles = v
         num_events = 20
         n = 10  # number of pickup nodes
         operational, quality, runtime = main(
@@ -200,4 +213,3 @@ if __name__ == "__main__":
             H,
             C_K,
         )
-        C_K += 5

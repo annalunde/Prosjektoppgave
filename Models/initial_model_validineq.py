@@ -669,7 +669,29 @@ class InitialModelValidIneq:
             operational = obj1.getValue()
             quality = obj2.getValue()
 
-            return route_plan, unused_vehicles, operational, quality
+            ride_sharing_sum = 0
+            counter = 0
+            for i in nodes_depots:
+                for j in vehicles:
+                    if q_S[i, j].x >= 0.9:
+                        ride_sharing_sum += q_S[i, j].x
+                        counter += 1
+
+            ride_sharing = round(ride_sharing_sum / counter, 2)
+
+            t_min = min(route_plan["t"].values())
+            t_max = max(route_plan["t"].values())
+
+            productivity = round(ride_sharing_sum / (t_max - t_min), 2)
+
+            return (
+                route_plan,
+                unused_vehicles,
+                operational,
+                quality,
+                ride_sharing,
+                productivity,
+            )
 
         except GurobiError as e:
             print("Error reported")

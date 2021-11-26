@@ -667,7 +667,12 @@ class ReoptModelValidIneq:
             t_min = min(route_plan["t"].values())
             t_max = max(route_plan["t"].values())
 
-            productivity = round(ride_sharing_sum / (t_max - t_min), 2)
+            productivity_sum = 0
+            pickups_not_rej = [p for p in pickups if p not in rejected]
+            for i in pickups_not_rej:
+                productivity_sum += L_S[i]
+
+            productivity = round(productivity_sum / (t_max - t_min), 2)
 
             return (
                 route_plan,

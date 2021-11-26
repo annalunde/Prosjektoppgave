@@ -682,7 +682,11 @@ class InitialModelValidIneq:
             t_min = min(route_plan["t"].values())
             t_max = max(route_plan["t"].values())
 
-            productivity = round(ride_sharing_sum / (t_max - t_min), 2)
+            productivity_sum = 0
+            for i in pickups:
+                productivity_sum += L_S[i]
+
+            productivity = round(productivity_sum / (t_max - t_min), 2)
 
             return (
                 route_plan,

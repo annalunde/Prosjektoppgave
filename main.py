@@ -29,6 +29,7 @@ def main(
     runtime_instance,
     H,
     C_K,
+    ride_sharing_instance,
 ):
     """
     This function performs a run for the DDDARP problem, where requests that are known in advance are planned and routed initially,
@@ -175,7 +176,9 @@ def plot(df):
     plt.show()
 
 
-def get_event(i, test_instance, complexity_instance, runtime_instance):
+def get_event(
+    i, test_instance, complexity_instance, runtime_instance, ride_sharing_instance
+):
     if test_instance:
         df = pd.read_csv(config("data_path_test_instances_events"))
         return df.iloc[i]
@@ -184,6 +187,9 @@ def get_event(i, test_instance, complexity_instance, runtime_instance):
         return df.iloc[i]
     if runtime_instance:
         df = pd.read_csv(config("data_path_runtime_events"))
+        return df.iloc[i]
+    if ride_sharing_instance:
+        df = pd.read_csv(config("data_path_ride_sharing_events"))
         return df.iloc[i]
     else:
         df = pd.read_csv(config("data_path_events"))
@@ -197,8 +203,8 @@ if __name__ == "__main__":
     for v in vehicles_set:
         start_time = datetime.now()
         num_vehicles = v
-        num_events = 20
-        n = 10  # number of pickup nodes
+        num_events = 8
+        n = 16  # number of pickup nodes
         operational, quality, runtime = main(
             num_events,
             sleep,
@@ -212,4 +218,5 @@ if __name__ == "__main__":
             runtime_instance,
             H,
             C_K,
+            ride_sharing_instance,
         )

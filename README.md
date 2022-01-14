@@ -4,16 +4,16 @@ This project studies the dial-a-ride problem (DARP) faced by Ruter Aldersvennlig
 
 Figure 1 provides a high-level view of the solution method.
 
-<img src=images/actornetwork.png width="400" height="500">
+<img src=implementation_flow.PNG width="400" height="500">
 
 **File structure:**
 
-- agent
-  - actor.py - the neural network actor
-- environment
-  - hexboard.py - the logic of the board
-  - game_manager.py - updates the state of the game
-- simulator
-  - mcts.py - gives the probability distribution of a state, which is equal to the softmax of total counts of visits to all child nodes of that state
-  - tree_node.py - node in the MCTS
-    -tournament - tournament.py - used for playing models that are trained at different levels against each other
+- Models
+  - initial_config.py - config file of the initial model
+  - initial_model.py - initial model
+  - initial_model_validineq.py - initial model with valid inequalities
+  - reoptimization_config.py - config file of the reoptimization model
+  - reoptimization_model.py - reoptimization model
+  - reoptimization_model_validineq.py - reoptimization model with valid inequalities
+  - updater_for_reopt.py - updater between intial and reoptimization model
+- Preprocessing - preprocessing of initial data
